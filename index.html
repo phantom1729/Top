@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Buds Edition</title>
+    <title>Raksha - Trap Mode</title>
 
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #ffebee; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 80px; }
@@ -32,8 +32,8 @@
     <h2>🛡️ Raksha Buds</h2>
 
     <button id="guardBtn" class="btn btn-orange" onclick="toggleScreamGuard()">
-        🔊 Activate Guard (Tap Buds to SOS)
-        <br><span style="font-size:12px; font-weight:normal;">(Pocket Mode + Earbuds Support)</span>
+        🔊 Activate Trap Mode
+        <br><span style="font-size:12px; font-weight:normal;">(Single Tap Buds to SOS)</span>
     </button>
 
     <button class="btn btn-green" onclick="manualLocation()">📍 Share Location</button>
@@ -48,15 +48,15 @@
     <div id="widgetButton" onclick="openAIWindow()">🤖</div>
 
     <div id="pocketOverlay" style="display:none;" onclick="exitPocketMode()">
-        <p style="color:#222; font-size:12px;">App is Active & Listening...</p>
+        <p style="color:#222; font-size:12px;">App is Active & Trapped...</p>
         <p style="color:#222; font-size:10px;">Double Tap Screen to Wake</p>
     </div>
 
     <div id="stealthOverlay" onclick="stopEmergency()"></div>
     <video id="hiddenVideo" autoplay playsinline muted style="display:none;"></video>
 
-    <audio id="silentAudio" loop>
-        <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjIwLjEwMAAAAAAAAAAAAAAA//oeAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD//////////////////////////////////////////////////////////////////AAAAAExhdmc1OC4yMC4xMDAAAAAAAAAAAAAAJAAAAAAAAAAAASCCQuZCAAAAAAAAAAAAAAAAAAAAAAAA//oeRn+AAAAAAAGUAAAAAAAAA7AAAAAAAAAAAAFkVGcHIAAAABAAABAAAAAAAAABAAAAAAAAAAAA//oeRn+AAAAAAAGUAAAAAAAAA7AAAAAAAAAAAAFkVGcHIAAAABAAABAAAAAAAAABAAAAAAAAAAAA//oeRn+AAAAAAAGUAAAAAAAAA7AAAAAAAAAAAAFkVGcHIAAAABAAABAAAAAAAAABAAAAAAAAAAAA" type="audio/mpeg">
+    <audio id="trapAudio" loop style="opacity:0; height:1px;">
+        <source src="https://www.soundjay.com/misc/sounds/wind-bag-1.mp3" type="audio/mpeg">
     </audio>
 
     <div id="secretModal">
@@ -88,54 +88,72 @@
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
 
-        // --- 🎧 EARBUDS TAP LISTENER (Media Session API) ---
-        function enableEarbudTrigger() {
-            const audio = document.getElementById("silentAudio");
+        // --- 🎧 THE TRAP LOGIC (PAUSE DETECTION) ---
+        function activateTrap() {
+            const audio = document.getElementById("trapAudio");
             
-            // 1. Play Silent Audio (Browser thinks music is playing)
+            // 1. Play Audio (Low Volume)
+            audio.volume = 0.05; // 5% volume (barely audible but keeps connection alive)
             audio.play().then(() => {
-                console.log("Silent Audio Playing - Earbuds Connected");
+                console.log("Trap Set: Audio Playing");
+                document.getElementById("status").innerText = "Trap Active: Playing Low Audio...";
                 
-                // 2. Intercept "Pause" command (Single Tap on Buds)
+                // 2. Setup Media Session (Shows controls on lock screen)
                 if ('mediaSession' in navigator) {
-                    navigator.mediaSession.setActionHandler('pause', function() {
-                        console.log("Earbud Tap Detected (Pause)");
-                        if (!emergencyActive && isGuardActive) {
-                            startEmergency();
-                        }
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: 'Safety Guard Active',
+                        artist: 'Raksha App',
+                        album: 'Listening Mode',
                     });
-
-                    // 3. Intercept "Next Track" (Double Tap on some Buds)
-                    navigator.mediaSession.setActionHandler('nexttrack', function() {
-                        console.log("Earbud Double Tap Detected");
-                        if (!emergencyActive && isGuardActive) {
-                            startEmergency();
-                        }
+                    
+                    // Force the phone to send commands here
+                    navigator.mediaSession.setActionHandler('play', () => {});
+                    navigator.mediaSession.setActionHandler('pause', () => {
+                        console.log("MediaSession Pause Triggered");
+                        triggerBudsSOS();
                     });
-
-                    // 4. Intercept "Previous Track" (Triple Tap)
-                    navigator.mediaSession.setActionHandler('previoustrack', function() {
-                        if (!emergencyActive && isGuardActive) {
-                            startEmergency();
-                        }
-                    });
+                    navigator.mediaSession.setActionHandler('stop', () => triggerBudsSOS());
                 }
-            }).catch(e => console.log("Audio Play Error: User interaction needed first"));
+
+            }).catch(e => alert("Please tap screen first to enable audio trap"));
+
+            // 3. THE REAL TRAP: "onpause" Event Listener
+            // Jab user Buds tap karega, phone audio ko PAUSE karega.
+            // Hum us event ko pakad lenge.
+            audio.onpause = function() {
+                // Agar humne khud band nahi kiya (Emergency ya Guard OFF), to ye Buds ne kiya hai
+                if (isGuardActive && !emergencyActive) {
+                    console.log("Audio Paused Externally (Buds Tap)");
+                    triggerBudsSOS();
+                }
+            };
         }
 
-        // --- 1. SCREAM GUARD + EARBUDS ---
+        function triggerBudsSOS() {
+            document.getElementById("status").innerText = "Buds Tap Detected!";
+            startEmergency();
+            // Optional: Play audio again to keep tracking if needed, or stop.
+        }
+
+        // --- 1. SCREAM GUARD + TRAP ---
         async function toggleScreamGuard() {
             if (isGuardActive) {
                 if (audioContext) audioContext.close();
                 isGuardActive = false;
                 releaseWakeLock();
-                document.getElementById("silentAudio").pause(); // Stop silent audio
+                
+                // Disable Trap
+                const audio = document.getElementById("trapAudio");
+                audio.onpause = null; // Remove listener
+                audio.pause();
+                
                 document.getElementById("pocketOverlay").style.display = "none";
                 document.getElementById("guardBtn").className = "btn btn-orange";
-                document.getElementById("guardBtn").innerHTML = "🔊 Activate Guard (Tap Buds to SOS)";
+                document.getElementById("guardBtn").innerHTML = "🔊 Activate Trap Mode";
                 document.getElementById("status").innerText = "Guard Mode OFF";
             } else {
                 try {
+                    // Start Mic (Scream)
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioContext.createAnalyser();
@@ -152,14 +170,17 @@
                         var average = values / length;
                         if (average > 110 && !emergencyActive) { startEmergency(); }
                     }
+
                     isGuardActive = true;
                     requestWakeLock();
-                    enableEarbudTrigger(); // ACTIVATE BUDS LISTENER
                     
+                    // START THE TRAP
+                    activateTrap();
+
                     document.getElementById("pocketOverlay").style.display = "flex";
                     document.getElementById("guardBtn").className = "btn btn-orange guard-active";
-                    document.getElementById("guardBtn").innerHTML = "🛡️ GUARD ACTIVE (Listening...)";
-                    document.getElementById("status").innerText = "Listening for Scream or Tap...";
+                    document.getElementById("guardBtn").innerHTML = "🛡️ TRAP ACTIVE";
+                    document.getElementById("status").innerText = "Trap Set. Tap Buds to Trigger.";
                 } catch (err) { alert("Mic Permission Needed!"); }
             }
         }
