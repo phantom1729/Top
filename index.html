@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Headset Mode</title>
+    <title>Raksha - Trap Debug</title>
 
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #ffebee; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 80px; }
@@ -25,6 +25,13 @@
         #status { font-weight: bold; margin-top: 10px; color: #555; font-size: 14px; }
         #locCounter { font-size: 12px; color: #d32f2f; margin-top: 5px; display:none; }
         
+        /* DEBUG LOG STYLE */
+        #debugLog {
+            background: #000; color: #0f0; font-family: monospace; 
+            padding: 10px; margin-top: 10px; border-radius: 5px; 
+            font-size: 12px; min-height: 20px;
+        }
+
         #widgetButton { position: fixed; bottom: 20px; right: 20px; width: 65px; height: 65px; background: linear-gradient(135deg, #1a237e, #3949ab); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 10002; border: 2px solid white; animation: float 3s ease-in-out infinite; }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     </style>
@@ -38,6 +45,8 @@
         🔊 ACTIVATE BUDS MODE
         <br><span style="font-size:12px; font-weight:normal;">(Tap Earbuds to Trigger SOS)</span>
     </button>
+
+    <div id="debugLog">Status: Waiting to Activate...</div>
 
     <button class="btn btn-green" onclick="manualLocation()">📍 Share Location</button>
     <a href="tel:+918409681110" style="text-decoration:none;"><button class="btn btn-blue">📞 Call Papa</button></a>
@@ -58,7 +67,7 @@
     <div id="stealthOverlay" onclick="stopEmergency()"></div>
     <video id="hiddenVideo" autoplay playsinline muted style="display:none;"></video>
 
-    <audio id="trapAudio" loop crossorigin="anonymous">
+    <audio id="trapAudio" loop crossorigin="anonymous" controls style="width:100px; height:30px; opacity:0.5; margin-top:10px;">
         <source src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" type="audio/ogg">
     </audio>
 
@@ -86,59 +95,74 @@
         let audioContext, analyser, microphone, javascriptNode, isGuardActive = false;
         let locInterval; let locCount = 0; let wakeLock = null;
 
+        function log(msg) {
+            document.getElementById("debugLog").innerText = msg;
+            console.log(msg);
+        }
+
         function openAIWindow() { window.open("https://ultimate-rakshak.vercel.app/", 'RakshaAI', "width=350,height=550"); }
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
 
-        // --- 🎧 MAIN TRAP FUNCTION ---
+        // --- 🎧 TRAP SYSTEM ---
         function startTrapSystem() {
+            log("Attempting to start Audio...");
             const audio = document.getElementById("trapAudio");
             
-            // STEP 1: PLAY AUDIO IMMEDIATELY (Must be first line)
-            // Using a coffee shop noise but very low volume
-            audio.volume = 1.0; // Pehle loud bajega confirm karne ke liye
+            audio.volume = 1.0; 
             
             var playPromise = audio.play();
 
             if (playPromise !== undefined) {
                 playPromise.then(_ => {
-                    console.log("Audio Started!");
+                    log("AUDIO PLAYING! Tap Buds NOW to test.");
                     
-                    // 2 Seconds baad volume low kar denge
-                    setTimeout(() => { audio.volume = 0.05; }, 2000);
+                    // Lower volume after 4 seconds (Longer time to ensure focus)
+                    setTimeout(() => { 
+                        audio.volume = 0.1; 
+                        log("Volume Lowered. Trap Active.");
+                    }, 4000);
 
-                    // STEP 2: SETUP MEDIA CONTROLS
+                    // MEDIA SESSION SETUP
                     if ('mediaSession' in navigator) {
                         navigator.mediaSession.metadata = new MediaMetadata({
-                            title: 'Raksha Active',
-                            artist: 'Safety Mode ON',
-                            album: 'Tap Buds to SOS',
-                            artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/10337/10337094.png', sizes: '96x96', type: 'image/png' }]
+                            title: 'Safety Active',
+                            artist: 'Tap to SOS',
+                            album: 'Raksha App'
                         });
 
-                        navigator.mediaSession.setActionHandler('play', function() {}); // Ignore Play
+                        navigator.mediaSession.setActionHandler('play', function() { log("Media Play Cmd"); });
                         navigator.mediaSession.setActionHandler('pause', function() {
-                            // THIS IS THE TRIGGER
-                            console.log("User Tapped Buds (Pause Command)");
+                            log("🔥 MEDIA PAUSE CMD RECEIVED!");
                             triggerBudsSOS();
                         });
                         navigator.mediaSession.setActionHandler('stop', function() { triggerBudsSOS(); });
-                        navigator.mediaSession.setActionHandler('previoustrack', function() { triggerBudsSOS(); });
-                        navigator.mediaSession.setActionHandler('nexttrack', function() { triggerBudsSOS(); });
                     }
 
-                    // STEP 3: START REST OF THE SYSTEM
-                    toggleScreamGuard();
+                    toggleScreamGuard(); // Start Mic logic too
 
                 }).catch(error => {
-                    alert("Audio Blocked! Please interact with the page more.");
+                    log("Audio Failed: " + error.message);
+                    alert("Please Interact/Click on page first!");
                 });
             }
+
+            // CRITICAL: Force Listen to Pause Event on Audio Element
+            audio.onpause = function() {
+                // If App didn't pause it (Guard Active), then User did it via Buds
+                if (isGuardActive && !emergencyActive) {
+                    log("🔥 AUDIO ELEMENT PAUSED! SOS!");
+                    triggerBudsSOS();
+                } else {
+                    log("Audio Paused Internally.");
+                }
+            };
         }
 
         function triggerBudsSOS() {
             if (!emergencyActive) {
                 document.getElementById("status").innerText = "Buds Tap Detected!";
+                log("🚀 STARTING EMERGENCY SEQUENCE...");
                 startEmergency();
             }
         }
@@ -170,7 +194,10 @@
                         var values = 0; var length = array.length;
                         for (var i = 0; i < length; i++) { values += array[i]; }
                         var average = values / length;
-                        if (average > 110 && !emergencyActive) { startEmergency(); }
+                        if (average > 110 && !emergencyActive) { 
+                            log("SCREAM DETECTED!");
+                            startEmergency(); 
+                        }
                     }
 
                     isGuardActive = true;
@@ -179,7 +206,7 @@
                     document.getElementById("pocketOverlay").style.display = "flex";
                     document.getElementById("guardBtn").className = "btn btn-orange guard-active";
                     document.getElementById("guardBtn").innerHTML = "🛡️ BUDS & MIC ACTIVE";
-                    document.getElementById("status").innerText = "Playing Audio Loop...";
+                    document.getElementById("status").innerText = "Running...";
                     
                 } catch (err) { alert("Mic Permission Needed!"); }
             }
