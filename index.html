@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Trap Mode</title>
+    <title>Raksha - Headset Mode</title>
 
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #ffebee; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 80px; }
@@ -18,10 +18,13 @@
         .btn-secret { background: #546e7a; margin-top: 40px; font-size: 16px; }
         @keyframes pulse { 0% { box-shadow: 0 0 10px #c62828; } 50% { box-shadow: 0 0 25px #c62828; } 100% { box-shadow: 0 0 10px #c62828; } }
         @keyframes breathe { 0% { border-color: #ff9800; } 50% { border-color: white; } 100% { border-color: #ff9800; } }
+        
         #secretModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 20000; overflow-y: scroll; }
         #pocketOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 99999; color: #333; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        
         #status { font-weight: bold; margin-top: 10px; color: #555; font-size: 14px; }
         #locCounter { font-size: 12px; color: #d32f2f; margin-top: 5px; display:none; }
+        
         #widgetButton { position: fixed; bottom: 20px; right: 20px; width: 65px; height: 65px; background: linear-gradient(135deg, #1a237e, #3949ab); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 10002; border: 2px solid white; animation: float 3s ease-in-out infinite; }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     </style>
@@ -31,9 +34,9 @@
 
     <h2>🛡️ Raksha Buds</h2>
 
-    <button id="guardBtn" class="btn btn-orange" onclick="toggleScreamGuard()">
-        🔊 Activate Trap Mode
-        <br><span style="font-size:12px; font-weight:normal;">(Single Tap Buds to SOS)</span>
+    <button id="guardBtn" class="btn btn-orange" onclick="startTrapSystem()">
+        🔊 ACTIVATE BUDS MODE
+        <br><span style="font-size:12px; font-weight:normal;">(Tap Earbuds to Trigger SOS)</span>
     </button>
 
     <button class="btn btn-green" onclick="manualLocation()">📍 Share Location</button>
@@ -48,15 +51,15 @@
     <div id="widgetButton" onclick="openAIWindow()">🤖</div>
 
     <div id="pocketOverlay" style="display:none;" onclick="exitPocketMode()">
-        <p style="color:#222; font-size:12px;">App is Active & Trapped...</p>
+        <p style="color:#222; font-size:12px;">App is Connected to Buds...</p>
         <p style="color:#222; font-size:10px;">Double Tap Screen to Wake</p>
     </div>
 
     <div id="stealthOverlay" onclick="stopEmergency()"></div>
     <video id="hiddenVideo" autoplay playsinline muted style="display:none;"></video>
 
-    <audio id="trapAudio" loop style="opacity:0; height:1px;">
-        <source src="https://www.soundjay.com/misc/sounds/wind-bag-1.mp3" type="audio/mpeg">
+    <audio id="trapAudio" loop crossorigin="anonymous">
+        <source src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" type="audio/ogg">
     </audio>
 
     <div id="secretModal">
@@ -69,7 +72,6 @@
             </div>
             <div id="realHelp" style="display:none;">
                 <h1 style="color:#d32f2f; text-align: center;">🤫 Silent Help Zone</h1>
-                <p>Secret safe space.</p>
                 <button class="btn btn-green" onclick="window.open('https://stopncii.org/')">🛑 Block Images</button>
                 <button class="btn" onclick="closeSecretMode()" style="background:#333;">❌ Close</button>
             </div>
@@ -88,72 +90,72 @@
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
 
-        // --- 🎧 THE TRAP LOGIC (PAUSE DETECTION) ---
-        function activateTrap() {
+        // --- 🎧 MAIN TRAP FUNCTION ---
+        function startTrapSystem() {
             const audio = document.getElementById("trapAudio");
             
-            // 1. Play Audio (Low Volume)
-            audio.volume = 0.05; // 5% volume (barely audible but keeps connection alive)
-            audio.play().then(() => {
-                console.log("Trap Set: Audio Playing");
-                document.getElementById("status").innerText = "Trap Active: Playing Low Audio...";
-                
-                // 2. Setup Media Session (Shows controls on lock screen)
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: 'Safety Guard Active',
-                        artist: 'Raksha App',
-                        album: 'Listening Mode',
-                    });
+            // STEP 1: PLAY AUDIO IMMEDIATELY (Must be first line)
+            // Using a coffee shop noise but very low volume
+            audio.volume = 1.0; // Pehle loud bajega confirm karne ke liye
+            
+            var playPromise = audio.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    console.log("Audio Started!");
                     
-                    // Force the phone to send commands here
-                    navigator.mediaSession.setActionHandler('play', () => {});
-                    navigator.mediaSession.setActionHandler('pause', () => {
-                        console.log("MediaSession Pause Triggered");
-                        triggerBudsSOS();
-                    });
-                    navigator.mediaSession.setActionHandler('stop', () => triggerBudsSOS());
-                }
+                    // 2 Seconds baad volume low kar denge
+                    setTimeout(() => { audio.volume = 0.05; }, 2000);
 
-            }).catch(e => alert("Please tap screen first to enable audio trap"));
+                    // STEP 2: SETUP MEDIA CONTROLS
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: 'Raksha Active',
+                            artist: 'Safety Mode ON',
+                            album: 'Tap Buds to SOS',
+                            artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/10337/10337094.png', sizes: '96x96', type: 'image/png' }]
+                        });
 
-            // 3. THE REAL TRAP: "onpause" Event Listener
-            // Jab user Buds tap karega, phone audio ko PAUSE karega.
-            // Hum us event ko pakad lenge.
-            audio.onpause = function() {
-                // Agar humne khud band nahi kiya (Emergency ya Guard OFF), to ye Buds ne kiya hai
-                if (isGuardActive && !emergencyActive) {
-                    console.log("Audio Paused Externally (Buds Tap)");
-                    triggerBudsSOS();
-                }
-            };
+                        navigator.mediaSession.setActionHandler('play', function() {}); // Ignore Play
+                        navigator.mediaSession.setActionHandler('pause', function() {
+                            // THIS IS THE TRIGGER
+                            console.log("User Tapped Buds (Pause Command)");
+                            triggerBudsSOS();
+                        });
+                        navigator.mediaSession.setActionHandler('stop', function() { triggerBudsSOS(); });
+                        navigator.mediaSession.setActionHandler('previoustrack', function() { triggerBudsSOS(); });
+                        navigator.mediaSession.setActionHandler('nexttrack', function() { triggerBudsSOS(); });
+                    }
+
+                    // STEP 3: START REST OF THE SYSTEM
+                    toggleScreamGuard();
+
+                }).catch(error => {
+                    alert("Audio Blocked! Please interact with the page more.");
+                });
+            }
         }
 
         function triggerBudsSOS() {
-            document.getElementById("status").innerText = "Buds Tap Detected!";
-            startEmergency();
-            // Optional: Play audio again to keep tracking if needed, or stop.
+            if (!emergencyActive) {
+                document.getElementById("status").innerText = "Buds Tap Detected!";
+                startEmergency();
+            }
         }
 
-        // --- 1. SCREAM GUARD + TRAP ---
+        // --- 1. SCREAM GUARD ---
         async function toggleScreamGuard() {
             if (isGuardActive) {
                 if (audioContext) audioContext.close();
                 isGuardActive = false;
                 releaseWakeLock();
-                
-                // Disable Trap
-                const audio = document.getElementById("trapAudio");
-                audio.onpause = null; // Remove listener
-                audio.pause();
-                
                 document.getElementById("pocketOverlay").style.display = "none";
                 document.getElementById("guardBtn").className = "btn btn-orange";
-                document.getElementById("guardBtn").innerHTML = "🔊 Activate Trap Mode";
+                document.getElementById("guardBtn").innerHTML = "🔊 ACTIVATE BUDS MODE";
                 document.getElementById("status").innerText = "Guard Mode OFF";
+                document.getElementById("trapAudio").pause();
             } else {
                 try {
-                    // Start Mic (Scream)
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioContext.createAnalyser();
@@ -174,13 +176,11 @@
                     isGuardActive = true;
                     requestWakeLock();
                     
-                    // START THE TRAP
-                    activateTrap();
-
                     document.getElementById("pocketOverlay").style.display = "flex";
                     document.getElementById("guardBtn").className = "btn btn-orange guard-active";
-                    document.getElementById("guardBtn").innerHTML = "🛡️ TRAP ACTIVE";
-                    document.getElementById("status").innerText = "Trap Set. Tap Buds to Trigger.";
+                    document.getElementById("guardBtn").innerHTML = "🛡️ BUDS & MIC ACTIVE";
+                    document.getElementById("status").innerText = "Playing Audio Loop...";
+                    
                 } catch (err) { alert("Mic Permission Needed!"); }
             }
         }
