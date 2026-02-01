@@ -1,3 +1,11 @@
+            let deltaY = Math.abs(lastY - acc.y);
+            let deltaZ = Math.abs(lastZ - acc.z);
+            if ((deltaX + deltaY + deltaZ) > shakeThreshold) {
+                console.log("SHAKE DETECTED!");
+                startEmergency();
+            }
+            lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+        }
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -148,6 +156,143 @@
             lastX = acc.x; lastY = acc.y; lastZ = acc.z;
         }
 
+        // --- 1. GUARD TOGGLE ---
+        async function toggleShakeGuard() {
+            if (isGuardActive) {
+                if (audioContext) audioContext.close();
+                window.removeEventListener('devicemotion', handleMotion);
+                isGuardActive = false;
+                releaseWakeLock();
+                document.getElementById("pocketOverlay").style.display = "none";
+                document.getElementById("guardBtn").className = "btn btn-orange";
+                document.getElementById("guardBtn").innerHTML = "🔊 ACTIVATE GUARD + REMOTE";
+                document.getElementById("status").innerText = "Guard Mode OFF";
+            } else {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    microphone = audioContext.createMediaStreamSource(stream);
+                    javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+                    analyser.smoothingTimeConstant = 0.8; analyser.fftSize = 1024;
+                    microphone.connect(analyser); analyser.connect(javascriptNode);
+                    javascriptNode.connect(audioContext.destination);
+                    javascriptNode.onaudioprocess = function() {
+                        var array = new Uint8Array(analyser.frequencyBinCount);
+                        analyser.getByteFrequencyData(array);
+                        var values = 0; var length = array.length;
+                        for (var i = 0; i < length; i++) { values += array[i]; }
+                        var average = values / length;
+                        if (average > 110 && !emergencyActive) { startEmergency(); }
+                    }
+
+                    if (window.DeviceMotionEvent) window.addEventListener('devicemotion', handleMotion, true);
+
+                    isGuardActive = true;
+                    requestWakeLock();
+                    
+                    // ACTIVATE FOCUS TRAP FOR REMOTE
+                    focusTrap();
+
+                    document.getElementById("pocketOverlay").style.display = "flex";
+                    document.getElementById("guardBtn").className = "btn btn-orange guard-active";
+                    document.getElementById("guardBtn").innerHTML = "🛡️ REMOTE & MIC ACTIVE";
+                    document.getElementById("status").innerText = "Ready for Remote Click...";
+                    
+                } catch (err) { alert("Permissions Needed!"); }
+            }
+        }
+        
+        let lastTap = 0;
+        function exitPocketMode() {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastTap < 500) document.getElementById("pocketOverlay").style.display = "none";
+            lastTap = currentTime;
+        }
+
+        // --- 2. EMERGENCY TRIGGER ---
+        async function startEmergency() {
+            if (emergencyActive) return;
+            emergencyActive = true;
+            if (isGuardActive && audioContext) { audioContext.close(); isGuardActive = false; }
+            requestWakeLock();
+            window.removeEventListener('devicemotion', handleMotion);
+            
+            document.getElementById("pocketOverlay").style.display = "none";
+            document.getElementById("status").innerText = "⚠️ SOS ACTIVATED!";
+            document.getElementById("status").style.color = "red";
+            document.getElementById("locCounter").style.display = "block";
+
+            forceSendLocation(); 
+            locInterval = setInterval(forceSendLocation, 10000); 
+            startVideoRecording();
+            setTimeout(() => { window.location.href = "tel:112"; }, 1500);
+            setTimeout(() => {
+                document.getElementById("pocketOverlay").style.display = "flex"; 
+                document.getElementById("pocketOverlay").style.background = "black"; 
+                document.getElementById("pocketOverlay").innerHTML = ""; 
+                if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e=>{});
+            }, 3000);
+        }
+
+        // --- 3. VIDEO RECORDER ---
+        async function startVideoRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }));
+                document.getElementById("hiddenVideo").srcObject = stream;
+                let options = { mimeType: 'video/webm;codecs=vp8,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) options = {};
+                mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.onstop = uploadVideo;
+                mediaRecorder.start();
+                setInterval(() => {
+                    if (mediaRecorder.state === "recording") { mediaRecorder.stop(); setTimeout(() => { if(emergencyActive) mediaRecorder.start(); }, 100); }
+                }, 5000); 
+            } catch (err) { alert("Camera Error: " + err.message); }
+        }
+
+        function uploadVideo() {
+            if (!recordedChunks.length) return;
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "video/webm" });
+            recordedChunks = [];
+            const formData = new FormData();
+            formData.append("chat_id", CHAT_ID);
+            let ext = blob.type.includes("mp4") ? "mp4" : "webm";
+            formData.append("video", blob, `evidence_${Date.now()}.${ext}`);
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, { method: "POST", body: formData }).catch(e=>{});
+        }
+
+        function forceSendLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+                    locCount++;
+                    document.getElementById("locCounter").innerText = "Updates Sent: " + locCount;
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation?chat_id=${CHAT_ID}&latitude=${lat}&longitude=${lon}`).catch(e=>{});
+                    const msg = `🚨 LOC UPDATE #${locCount}\n📍 https://www.google.com/maps?q=${lat},${lon}`;
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`).catch(e=>{});
+                }, error => { console.log("GPS Fail"); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+            }
+        }
+
+        function manualLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const link = `http://googleusercontent.com/maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                    window.location.href = `https://wa.me/?text=${encodeURIComponent("My Location: " + link)}`;
+                });
+            }
+        }
+
+        function stopEmergency() { tapCount++; if (tapCount >= 4) { location.reload(); } }
+        function openSecretMode() { document.getElementById("secretModal").style.display = "block"; }
+        function closeSecretMode() { document.getElementById("secretModal").style.display = "none"; document.getElementById("fakeLogin").style.display = "block"; document.getElementById("realHelp").style.display = "none"; document.getElementById("secretPass").value = ""; }
+        function checkSecretPass() { if(document.getElementById("secretPass").value === "1234") { document.getElementById("fakeLogin").style.display = "none"; document.getElementById("realHelp").style.display = "block"; } else { alert("Incorrect Password!"); } }
+    </script>
+</body>
+</html>
         // --- 1. GUARD TOGGLE ---
         async function toggleShakeGuard() {
             if (isGuardActive) {
