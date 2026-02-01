@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Remote Fix</title>
+    <title>Raksha - Smooth & Stealth</title>
 
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #ffebee; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 80px; }
@@ -25,13 +25,6 @@
         #status { font-weight: bold; margin-top: 10px; color: #555; font-size: 14px; }
         #locCounter { font-size: 12px; color: #d32f2f; margin-top: 5px; display:none; }
         
-        /* KEY TESTER DISPLAY */
-        #keyDisplay {
-            background: #000; color: #0f0; font-family: monospace; 
-            padding: 10px; margin-top: 5px; border-radius: 5px; 
-            font-size: 14px; min-height: 25px; border: 1px solid #333;
-        }
-
         #widgetButton { position: fixed; bottom: 20px; right: 20px; width: 65px; height: 65px; background: linear-gradient(135deg, #1a237e, #3949ab); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 10002; border: 2px solid white; animation: float 3s ease-in-out infinite; }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     </style>
@@ -39,14 +32,12 @@
 
 <body>
 
-    <h2>🛡️ Raksha Remote</h2>
+    <h2>🛡️ Raksha Stealth</h2>
 
     <button id="guardBtn" class="btn btn-orange" onclick="toggleShakeGuard()">
-        🔊 ACTIVATE GUARD + REMOTE
-        <br><span style="font-size:12px; font-weight:normal;">(Tap to Connect Remote)</span>
+        🔊 ACTIVATE GUARD (All Sensors)
+        <br><span style="font-size:12px; font-weight:normal;">(Remote + Shake + Mic)</span>
     </button>
-
-    <div id="keyDisplay">Last Key: None</div>
 
     <button class="btn btn-green" onclick="manualLocation()">📍 Share Location</button>
     <a href="tel:+918409681110" style="text-decoration:none;"><button class="btn btn-blue">📞 Call Papa</button></a>
@@ -60,14 +51,12 @@
     <div id="widgetButton" onclick="openAIWindow()">🤖</div>
 
     <div id="pocketOverlay" style="display:none;" onclick="exitPocketMode()">
-        <p style="color:#222; font-size:12px;">Monitoring Remote & Motion...</p>
+        <p style="color:#222; font-size:12px;">App is Active (Stealth Mode)</p>
         <p style="color:#222; font-size:10px;">Double Tap Screen to Wake</p>
     </div>
 
-    <input type="text" id="remoteTrap" style="opacity:0; position:absolute; top:-1000px; height:1px; width:1px;">
-
     <div id="stealthOverlay" onclick="stopEmergency()"></div>
-    <video id="hiddenVideo" autoplay playsinline muted style="display:none;"></video>
+    <video id="hiddenVideo" autoplay playsinline muted style="position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none;"></video>
 
     <div id="secretModal">
         <div style="padding:20px; text-align:left;">
@@ -102,36 +91,26 @@
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
 
-        // --- 🔵 THE REMOTE FIX (FOCUS TRAP) ---
-        // This keeps the hidden input focused so the browser listens to keys
-        function focusTrap() {
-            const trap = document.getElementById("remoteTrap");
-            trap.focus();
-            // Prevent losing focus
-            trap.onblur = function() {
-                setTimeout(() => { if(isGuardActive) trap.focus(); }, 10);
-            };
-        }
-
-        // Detect Keys on the TRAP input specifically
-        document.getElementById("remoteTrap").addEventListener('keydown', handleRemoteKey);
-        // Also listen globally just in case
-        window.addEventListener('keydown', handleRemoteKey);
-
-        function handleRemoteKey(event) {
-            // Show what key was pressed on screen
-            document.getElementById("keyDisplay").innerText = "Key Detected: " + event.key;
+        // --- 🔵 REMOTE FIX (NO KEYBOARD) ---
+        // Instead of an input box, we listen to the WHOLE WINDOW.
+        // We preventDefault() so keys don't trigger weird browser actions.
+        window.addEventListener('keydown', function(event) {
             
-            // Allow almost ANY key to trigger SOS (Enter, Volume, Space, a, b, etc.)
-            // Because remotes send weird keys sometimes.
-            // But ignore standard modification keys like Shift/Control
-            if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
-                if (isGuardActive && !emergencyActive) {
-                    console.log("Remote Triggered SOS");
+            // IGNORE Shift/Ctrl/Alt (User might be typing elsewhere if not in pocket mode)
+            if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
+
+            // Only trigger if Guard is Active OR we are in Pocket Mode
+            if (isGuardActive || emergencyActive) {
+                // Prevent default behavior (Stops keyboard/scrolling)
+                event.preventDefault(); 
+                
+                if (!emergencyActive) {
+                    console.log("Remote Triggered: " + event.key);
+                    document.getElementById("status").innerText = "Remote Signal Detected!";
                     startEmergency();
                 }
             }
-        }
+        });
 
         // --- 👋 SHAKE DETECTION ---
         function handleMotion(event) {
@@ -142,7 +121,6 @@
             let deltaY = Math.abs(lastY - acc.y);
             let deltaZ = Math.abs(lastZ - acc.z);
             if ((deltaX + deltaY + deltaZ) > shakeThreshold) {
-                console.log("SHAKE DETECTED!");
                 startEmergency();
             }
             lastX = acc.x; lastY = acc.y; lastZ = acc.z;
@@ -157,10 +135,11 @@
                 releaseWakeLock();
                 document.getElementById("pocketOverlay").style.display = "none";
                 document.getElementById("guardBtn").className = "btn btn-orange";
-                document.getElementById("guardBtn").innerHTML = "🔊 ACTIVATE GUARD + REMOTE";
+                document.getElementById("guardBtn").innerHTML = "🔊 ACTIVATE GUARD (All Sensors)";
                 document.getElementById("status").innerText = "Guard Mode OFF";
             } else {
                 try {
+                    // Start Mic
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioContext.createAnalyser();
@@ -183,13 +162,10 @@
                     isGuardActive = true;
                     requestWakeLock();
                     
-                    // ACTIVATE FOCUS TRAP FOR REMOTE
-                    focusTrap();
-
                     document.getElementById("pocketOverlay").style.display = "flex";
                     document.getElementById("guardBtn").className = "btn btn-orange guard-active";
-                    document.getElementById("guardBtn").innerHTML = "🛡️ REMOTE & MIC ACTIVE";
-                    document.getElementById("status").innerText = "Ready for Remote Click...";
+                    document.getElementById("guardBtn").innerHTML = "🛡️ SENSORS ACTIVE";
+                    document.getElementById("status").innerText = "Monitoring...";
                     
                 } catch (err) { alert("Permissions Needed!"); }
             }
@@ -227,21 +203,40 @@
             }, 3000);
         }
 
-        // --- 3. VIDEO RECORDER ---
+        // --- 3. VIDEO RECORDER (FIXED FOR SMOOTHNESS) ---
         async function startVideoRecording() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }));
+                // FIXED: Lower resolution and frame rate for stability
+                const constraints = {
+                    audio: true,
+                    video: {
+                        facingMode: "environment",
+                        width: { ideal: 480 },  // Low Res for speed
+                        frameRate: { ideal: 15 } // 15 FPS stops lag
+                    }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }));
+                
                 document.getElementById("hiddenVideo").srcObject = stream;
+                
                 let options = { mimeType: 'video/webm;codecs=vp8,opus' };
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) options = {};
+
                 mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = uploadVideo;
+                
                 mediaRecorder.start();
+                
+                // Increased chunk time to 6 seconds to reduce processing load
                 setInterval(() => {
-                    if (mediaRecorder.state === "recording") { mediaRecorder.stop(); setTimeout(() => { if(emergencyActive) mediaRecorder.start(); }, 100); }
-                }, 5000); 
+                    if (mediaRecorder.state === "recording") { 
+                        mediaRecorder.stop(); 
+                        setTimeout(() => { if(emergencyActive) mediaRecorder.start(); }, 100); 
+                    }
+                }, 6000); 
             } catch (err) { alert("Camera Error: " + err.message); }
         }
 
