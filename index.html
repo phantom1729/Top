@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Smooth & Stealth</title>
+    <title>Raksha - Ultimate</title>
 
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #ffebee; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 80px; }
@@ -20,7 +20,16 @@
         @keyframes breathe { 0% { border-color: #ff9800; } 50% { border-color: white; } 100% { border-color: #ff9800; } }
         
         #secretModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 20000; overflow-y: scroll; }
-        #pocketOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 99999; color: #333; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        
+        /* FULL SCREEN BLACK OVERLAY */
+        #pocketOverlay { 
+            display: none; position: fixed; top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: black; z-index: 2147483647; /* Highest possible Z-Index */
+            color: #222; 
+            align-items: center; justify-content: center; 
+            flex-direction: column;
+        }
         
         #status { font-weight: bold; margin-top: 10px; color: #555; font-size: 14px; }
         #locCounter { font-size: 12px; color: #d32f2f; margin-top: 5px; display:none; }
@@ -32,10 +41,10 @@
 
 <body>
 
-    <h2>🛡️ Raksha Stealth</h2>
+    <h2>🛡️ Raksha Final</h2>
 
     <button id="guardBtn" class="btn btn-orange" onclick="toggleShakeGuard()">
-        🔊 ACTIVATE GUARD (All Sensors)
+        🔊 ACTIVATE GUARD
         <br><span style="font-size:12px; font-weight:normal;">(Remote + Shake + Mic)</span>
     </button>
 
@@ -50,9 +59,8 @@
     <button class="btn btn-secret" onclick="openSecretMode()">📚 Class 12 Biology Notes</button>
     <div id="widgetButton" onclick="openAIWindow()">🤖</div>
 
-    <div id="pocketOverlay" style="display:none;" onclick="exitPocketMode()">
-        <p style="color:#222; font-size:12px;">App is Active (Stealth Mode)</p>
-        <p style="color:#222; font-size:10px;">Double Tap Screen to Wake</p>
+    <div id="pocketOverlay" onclick="exitPocketMode()">
+        <p style="color:#111; font-size:12px;">App Active. Double Tap to Wake.</p>
     </div>
 
     <div id="stealthOverlay" onclick="stopEmergency()"></div>
@@ -91,22 +99,19 @@
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
 
-        // --- 🔵 REMOTE FIX (NO KEYBOARD) ---
-        // Instead of an input box, we listen to the WHOLE WINDOW.
-        // We preventDefault() so keys don't trigger weird browser actions.
+        // --- 🔵 REMOTE LISTENER (No Keyboard Popup) ---
+        // Listens for ANY key press from Bluetooth Shutter
         window.addEventListener('keydown', function(event) {
-            
-            // IGNORE Shift/Ctrl/Alt (User might be typing elsewhere if not in pocket mode)
+            // Ignore system keys
             if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
 
-            // Only trigger if Guard is Active OR we are in Pocket Mode
+            // Trigger SOS if Guard is active
             if (isGuardActive || emergencyActive) {
-                // Prevent default behavior (Stops keyboard/scrolling)
+                // Prevent scrolling or other actions
                 event.preventDefault(); 
                 
                 if (!emergencyActive) {
                     console.log("Remote Triggered: " + event.key);
-                    document.getElementById("status").innerText = "Remote Signal Detected!";
                     startEmergency();
                 }
             }
@@ -126,17 +131,20 @@
             lastX = acc.x; lastY = acc.y; lastZ = acc.z;
         }
 
-        // --- 1. GUARD TOGGLE ---
+        // --- 1. ACTIVATION LOGIC (BLACK SCREEN) ---
         async function toggleShakeGuard() {
             if (isGuardActive) {
+                // STOP EVERYTHING
                 if (audioContext) audioContext.close();
                 window.removeEventListener('devicemotion', handleMotion);
                 isGuardActive = false;
                 releaseWakeLock();
                 document.getElementById("pocketOverlay").style.display = "none";
                 document.getElementById("guardBtn").className = "btn btn-orange";
-                document.getElementById("guardBtn").innerHTML = "🔊 ACTIVATE GUARD (All Sensors)";
+                document.getElementById("guardBtn").innerHTML = "🔊 ACTIVATE GUARD";
                 document.getElementById("status").innerText = "Guard Mode OFF";
+                // Exit Full Screen
+                if (document.exitFullscreen) document.exitFullscreen();
             } else {
                 try {
                     // Start Mic
@@ -162,19 +170,31 @@
                     isGuardActive = true;
                     requestWakeLock();
                     
+                    // --- 🔥 IMMEDIATE BLACK SCREEN LOGIC ---
                     document.getElementById("pocketOverlay").style.display = "flex";
+                    // Attempt Full Screen (Requires User Interaction - Click works)
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(err => {
+                            console.log("Full screen blocked but overlay active");
+                        });
+                    }
+
                     document.getElementById("guardBtn").className = "btn btn-orange guard-active";
-                    document.getElementById("guardBtn").innerHTML = "🛡️ SENSORS ACTIVE";
+                    document.getElementById("guardBtn").innerHTML = "🛡️ ACTIVE";
                     document.getElementById("status").innerText = "Monitoring...";
                     
-                } catch (err) { alert("Permissions Needed!"); }
+                } catch (err) { alert("Mic Permission Needed for Guard Mode!"); }
             }
         }
         
         let lastTap = 0;
         function exitPocketMode() {
             const currentTime = new Date().getTime();
-            if (currentTime - lastTap < 500) document.getElementById("pocketOverlay").style.display = "none";
+            // Double tap to exit (500ms gap)
+            if (currentTime - lastTap < 500) {
+                document.getElementById("pocketOverlay").style.display = "none";
+                if (document.exitFullscreen) document.exitFullscreen().catch(e=>{});
+            }
             lastTap = currentTime;
         }
 
@@ -186,6 +206,7 @@
             requestWakeLock();
             window.removeEventListener('devicemotion', handleMotion);
             
+            // Temporary hide black screen to show status red
             document.getElementById("pocketOverlay").style.display = "none";
             document.getElementById("status").innerText = "⚠️ SOS ACTIVATED!";
             document.getElementById("status").style.color = "red";
@@ -195,6 +216,8 @@
             locInterval = setInterval(forceSendLocation, 10000); 
             startVideoRecording();
             setTimeout(() => { window.location.href = "tel:112"; }, 1500);
+            
+            // Go back to Black Screen for Stealth
             setTimeout(() => {
                 document.getElementById("pocketOverlay").style.display = "flex"; 
                 document.getElementById("pocketOverlay").style.background = "black"; 
@@ -203,19 +226,11 @@
             }, 3000);
         }
 
-        // --- 3. VIDEO RECORDER (FIXED FOR SMOOTHNESS) ---
+        // --- 3. VIDEO RECORDER (Optimized) ---
         async function startVideoRecording() {
             try {
-                // FIXED: Lower resolution and frame rate for stability
-                const constraints = {
-                    audio: true,
-                    video: {
-                        facingMode: "environment",
-                        width: { ideal: 480 },  // Low Res for speed
-                        frameRate: { ideal: 15 } // 15 FPS stops lag
-                    }
-                };
-                
+                // Low Res = No Glitch + Fast Upload
+                const constraints = { audio: true, video: { facingMode: "environment", width: { ideal: 480 }, frameRate: { ideal: 15 } } };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }));
                 
                 document.getElementById("hiddenVideo").srcObject = stream;
@@ -227,10 +242,9 @@
                 mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = uploadVideo;
-                
                 mediaRecorder.start();
                 
-                // Increased chunk time to 6 seconds to reduce processing load
+                // Save clip every 6 seconds
                 setInterval(() => {
                     if (mediaRecorder.state === "recording") { 
                         mediaRecorder.stop(); 
