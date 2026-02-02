@@ -3,18 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Ultimate</title>
+    <title>Raksha Elite - By Aryan</title>
 
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; }
+        /* --- MAIN THEME --- */
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 60px; }
         
+        /* BRANDING */
+        h2 { color: #ff3d00; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 61, 0, 0.5); }
+        .branding { font-size: 10px; color: #777; margin-bottom: 20px; letter-spacing: 1px; }
+        .footer { position: fixed; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 10px; color: #444; }
+
         /* BUTTONS */
-        .btn { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-orange { background: linear-gradient(135deg, #ff6f00, #ff8f00); box-shadow: 0 0 10px #ff6f00; }
-        .btn-red { background: linear-gradient(135deg, #d32f2f, #f44336); height: 70px; font-size: 20px; animation: pulse 2s infinite; }
-        .btn-grey { background: #333; border: 1px solid #555; }
+        .btn { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
+        .btn:active { transform: scale(0.95); }
         
-        /* FAKE SHUTDOWN ANIMATION */
+        .btn-orange { background: linear-gradient(135deg, #ff6f00, #ff8f00); box-shadow: 0 0 15px rgba(255, 111, 0, 0.4); }
+        .btn-grey { background: #333; border: 1px solid #555; }
+        .btn-green { background: linear-gradient(135deg, #2e7d32, #43a047); }
+        .btn-blue { background: linear-gradient(135deg, #1565c0, #1976d2); }
+        .btn-black { background: #000; border: 1px solid #333; }
+        .btn-red { background: linear-gradient(135deg, #d32f2f, #f44336); height: 70px; font-size: 20px; animation: pulse 2s infinite; margin-top: 15px; }
+        .btn-secret { background: transparent; border: 1px dashed #555; color: #777; margin-top: 30px; font-size: 12px; }
+
+        /* FAKE SHUTDOWN UI */
         #fakeShutdownOverlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: black; z-index: 99999; align-items: center; justify-content: center; flex-direction: column;
@@ -25,20 +37,22 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* HACKER HUD */
+        /* PREDATOR HUD */
         #hackerHUD {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1500; pointer-events: none; background: rgba(0, 0, 0, 0.5);
+            z-index: 1500; pointer-events: none; background: rgba(0, 0, 0, 0.8);
             font-family: 'Courier New', monospace;
         }
         .hud-text { position: absolute; color: #0f0; font-weight: bold; text-shadow: 0 0 5px #0f0; font-size: 14px;}
         .center-box {
             top: 50%; left: 50%; transform: translate(-50%, -50%); position: absolute;
             width: 250px; height: 250px; border: 2px dashed #0f0; border-radius: 10px;
+            animation: pulse-green 1s infinite;
         }
         .bottom-alert {
             bottom: 50px; width: 100%; text-align: center; position: absolute;
             color: red; font-size: 20px; font-weight: bold; background: black; padding: 10px;
+            animation: blink 0.5s infinite;
         }
 
         /* STEALTH OVERLAY */
@@ -47,20 +61,26 @@
             background: black; z-index: 2000; color: #111; align-items: center; justify-content: center; 
         }
 
-        /* HIDDEN VIDEO (Smooth Mode) */
+        /* SECRET MODAL */
+        #secretModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color:black; z-index: 20000; overflow-y: scroll; }
+
+        /* HIDDEN VIDEO */
         #hiddenVideo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0; transition: opacity 0.5s; }
         
         @keyframes pulse { 0% { box-shadow: 0 0 10px red; } 50% { box-shadow: 0 0 25px red; } 100% { box-shadow: 0 0 10px red; } }
+        @keyframes pulse-green { 0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
     </style>
 </head>
 
 <body>
 
-    <h2 style="color:#ff3d00;">🛡️ RAKSHA ELITE</h2>
+    <h2>🛡️ RAKSHA ELITE</h2>
+    <div class="branding">DEVELOPED BY ARYAN</div>
 
     <button id="guardBtn" class="btn btn-orange" onclick="toggleGuard()">
         🔊 ACTIVATE TRAP MODE
-        <br><span style="font-size:10px;">(Voice Warning + Siren + Flash)</span>
+        <br><span style="font-size:10px;">(Stealth + Voice + Siren + Flash)</span>
     </button>
 
     <button class="btn btn-grey" onclick="triggerFakeShutdown()">
@@ -68,13 +88,20 @@
         <br><span style="font-size:10px;">(Pretend Phone is Dead)</span>
     </button>
 
+    <button id="sirenBtn" class="btn btn-black" onclick="manualSiren()">🚓 Manual Siren</button>
+    <button class="btn btn-green" onclick="manualLocation()">📍 Share Location</button>
+    <a href="tel:+918409681110" style="text-decoration:none;"><button class="btn btn-blue">📞 Call Papa</button></a>
+
     <div style="margin: 20px 0; border-top: 1px solid #444;"></div>
 
     <button class="btn btn-red" onclick="startEmergency()">
         🆘 PANIC BUTTON
     </button>
 
-    <p id="status" style="color:#777; font-size:12px;">System Ready</p>
+    <p id="status" style="color:#777; font-size:12px;">System Ready | v2.0</p>
+    <button class="btn btn-secret" onclick="openSecretMode()">📚 Class 12 Biology Notes</button>
+
+    <div class="footer">© 2026 Aryan Security Systems</div>
 
     <div id="fakeShutdownOverlay" onclick="exitFakeShutdown()">
         <div class="spinner"></div>
@@ -89,7 +116,24 @@
         <div class="hud-text" style="top:20px; left:20px;" id="hudLeft">SCANNING...</div>
         <div class="hud-text" style="top:20px; right:20px;">BATTERY: 100%<br>REC: ●</div>
         <div class="center-box"></div>
-        <div class="hud-text bottom-alert">⚠️ UPLOADING TO POLICE...</div>
+        <div class="hud-text bottom-alert">⚠️ UPLOADING EVIDENCE TO POLICE...</div>
+    </div>
+
+    <div id="secretModal">
+        <div style="padding:20px; text-align:left;">
+            <div id="fakeLogin">
+                <h2 style="color:#333; text-align:center;">🔒 Restricted Access</h2>
+                <input type="password" id="secretPass" placeholder="Enter PIN" style="width:100%; padding:15px; font-size:18px; margin-bottom:10px; border:1px solid #ccc; border-radius:10px; box-sizing: border-box;">
+                <button class="btn btn-blue" onclick="checkSecretPass()">Unlock Notes</button>
+                <button class="btn btn-grey" onclick="closeSecretMode()">Close</button>
+            </div>
+            <div id="realHelp" style="display:none;">
+                <h1 style="color:#d32f2f; text-align: center;">🤫 Silent Help Zone</h1>
+                <p style="text-align:center;">Project by Aryan</p>
+                <button class="btn btn-green" onclick="window.open('https://stopncii.org/')">🛑 Block Images</button>
+                <button class="btn btn-grey" onclick="closeSecretMode()">❌ Close</button>
+            </div>
+        </div>
     </div>
 
     <video id="hiddenVideo" autoplay playsinline muted></video>
@@ -107,11 +151,11 @@
 
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
 
-        // --- 🗣️ VOICE WARM-UP (Very Important) ---
+        // --- 🗣️ VOICE WARM-UP ---
         function wakeUpVoiceEngine() {
             if ('speechSynthesis' in window) {
-                const dummy = new SpeechSynthesisUtterance("System Armed");
-                dummy.volume = 0; // Silent speak to wake up engine
+                const dummy = new SpeechSynthesisUtterance(".");
+                dummy.volume = 0; 
                 window.speechSynthesis.speak(dummy);
             }
         }
@@ -131,9 +175,7 @@
                     if (window.DeviceMotionEvent) window.addEventListener('devicemotion', handleMotion, true);
                     window.addEventListener('keydown', handleRemoteKey);
 
-                    // Wake up Voice System
                     wakeUpVoiceEngine();
-
                     isGuardActive = true;
                     requestWakeLock();
 
@@ -141,7 +183,7 @@
                     document.getElementById("pocketOverlay").style.display = "flex";
                     if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e=>{});
 
-                    document.getElementById("guardBtn").innerText = "🛡️ ARMED";
+                    document.getElementById("guardBtn").innerText = "🛡️ ARMED (Aryan OS)";
                 } catch (err) { alert("Camera Permission Needed!"); }
             }
         }
@@ -168,29 +210,24 @@
             shutdownMode = true;
             document.getElementById("fakeShutdownOverlay").style.display = "flex";
             if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e=>{});
-            
-            // 3 seconds spinner -> Then Full Black
             setTimeout(() => {
-                document.getElementById("fakeShutdownOverlay").innerHTML = ""; // Remove spinner, keep black
-                // Start secret recording
-                startVideoRecording();
+                document.getElementById("fakeShutdownOverlay").innerHTML = ""; // Remove spinner
+                startVideoRecording(); // Secret Recording
             }, 3000);
         }
 
         function exitFakeShutdown() {
-            // Triple tap logic can be added here, for now reload
             if(confirm("Exit Fake Shutdown?")) location.reload();
         }
 
-        // --- 4. EMERGENCY SEQUENCE (Voice -> Siren) ---
+        // --- 4. EMERGENCY SEQUENCE ---
         function startEmergency() {
             if (emergencyActive) return;
             emergencyActive = true;
 
-            // UI Changes
             document.getElementById("pocketOverlay").style.display = "none";
             document.getElementById("hackerHUD").style.display = "block";
-            document.getElementById("hiddenVideo").style.opacity = "0.4"; // Low opacity for smoothness
+            document.getElementById("hiddenVideo").style.opacity = "0.4"; 
             
             // HUD Animation
             let step = 0;
@@ -200,39 +237,24 @@
                 step++;
             }, 800);
 
-            // Play Voice Warning FIRST
             playVoiceWarning();
-
-            // Send Data
             sendSOS();
         }
 
-        // --- 🗣️ AI VOICE LOGIC (Fixed) ---
+        // --- VOICE & SIREN ---
         function playVoiceWarning() {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Clear queue
+                window.speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance("Warning! Face Detected. Location sent to Police Control Room.");
-                msg.lang = 'en-US';
-                msg.volume = 1;
-                msg.rate = 1.1;
-                msg.pitch = 1.0; 
-
-                msg.onend = function() {
-                    startSiren();
-                    startStrobe();
-                };
-                
-                // If it fails to speak in 3 seconds, start siren anyway
+                msg.lang = 'en-US'; msg.volume = 1; msg.rate = 1.1; msg.pitch = 1.0; 
+                msg.onend = function() { startSiren(); startStrobe(); };
                 setTimeout(() => { if(!sirenOscillator) startSiren(); }, 4000);
-
                 window.speechSynthesis.speak(msg);
             } else {
-                startSiren();
-                startStrobe();
+                startSiren(); startStrobe();
             }
         }
 
-        // --- HELPERS ---
         function startSiren() {
             try {
                 if (sirenOscillator) return;
@@ -248,7 +270,17 @@
                     sirenOscillator.frequency.setValueAtTime(isHigh ? 1200 : 700, sirenContext.currentTime);
                 }, 500);
             } catch(e) {}
-            setTimeout(() => { window.location.href = "tel:112"; }, 2500);
+            setTimeout(() => { window.location.href = "tel:112"; }, 3000);
+        }
+
+        function manualSiren() {
+            if(sirenOscillator) {
+                sirenOscillator.stop(); sirenOscillator = null; clearInterval(sirenInterval);
+                document.getElementById("sirenBtn").innerText = "🚓 MANUAL POLICE SIREN";
+            } else {
+                startSiren();
+                document.getElementById("sirenBtn").innerText = "🔕 STOP SIREN";
+            }
         }
 
         function startStrobe() {
@@ -260,11 +292,12 @@
             }, 150);
         }
 
+        // --- DATA SENDING ---
         function sendSOS() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent("🚨 THREAT DETECTED!\n📍 " + link)}`);
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent("🚨 RAKSHA ALERT (Aryan OS)!\n📍 " + link)}`);
                     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation?chat_id=${CHAT_ID}&latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}`);
                 }, null, { enableHighAccuracy: true });
             }
@@ -272,16 +305,13 @@
         }
         
         function startVideoRecording() {
-            // Using standard MP4/WebM
             let options = { mimeType: 'video/webm' };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
-            
             try {
                 mediaRecorder = new MediaRecorder(document.getElementById("hiddenVideo").srcObject, options);
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = uploadVideo;
                 mediaRecorder.start();
-                // Smaller chunks (4 seconds) to avoid lag
                 setInterval(() => { if (mediaRecorder.state === "recording") { mediaRecorder.stop(); setTimeout(() => mediaRecorder.start(), 100); } }, 4000);
             } catch(e) {}
         }
@@ -295,6 +325,20 @@
             formData.append("video", blob, `evidence_${Date.now()}.mp4`);
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, { method: "POST", body: formData }).catch(e=>{});
         }
+        
+        function manualLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const link = `http://googleusercontent.com/maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                    window.location.href = `https://wa.me/?text=${encodeURIComponent("My Location: " + link)}`;
+                });
+            }
+        }
+
+        // --- SECRET NOTES ---
+        function openSecretMode() { document.getElementById("secretModal").style.display = "block"; }
+        function closeSecretMode() { document.getElementById("secretModal").style.display = "none"; document.getElementById("fakeLogin").style.display = "block"; document.getElementById("realHelp").style.display = "none"; document.getElementById("secretPass").value = ""; }
+        function checkSecretPass() { if(document.getElementById("secretPass").value === "1234") { document.getElementById("fakeLogin").style.display = "none"; document.getElementById("realHelp").style.display = "block"; } else { alert("Incorrect Password!"); } }
 
         let lastTap = 0;
         function exitPocketMode() {
