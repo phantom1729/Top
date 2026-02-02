@@ -3,120 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha Elite - Aryan OS</title>
+    <title>Raksha - Remote Fix</title>
 
     <style>
-        /* --- THEME --- */
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #1a1a1a; color: white; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; touch-action: manipulation; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #ffebee; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 80px; }
+        h2 { color: #b71c1c; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .btn { width: 100%; padding: 18px; margin: 10px 0; font-size: 18px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.1s; }
+        .btn:active { transform: scale(0.96); }
+        .btn-green { background: linear-gradient(135deg, #2e7d32, #66bb6a); }
+        .btn-blue { background: linear-gradient(135deg, #1565c0, #42a5f5); }
+        .btn-orange { background: linear-gradient(135deg, #ef6c00, #ff9800); border: 2px solid #ffcc80; }
+        .guard-active { background: #333; color: #ff9800; animation: breathe 2s infinite; }
+        .btn-red { background: linear-gradient(135deg, #c62828, #ff5252); height: 130px; font-size: 26px; border: 4px solid #ffcdd2; animation: pulse 1.5s infinite; margin-top: 15px; }
+        .btn-secret { background: #546e7a; margin-top: 40px; font-size: 16px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 10px #c62828; } 50% { box-shadow: 0 0 25px #c62828; } 100% { box-shadow: 0 0 10px #c62828; } }
+        @keyframes breathe { 0% { border-color: #ff9800; } 50% { border-color: white; } 100% { border-color: #ff9800; } }
         
-        /* BRANDING */
-        h2 { color: #ff3d00; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 61, 0, 0.5); }
-        .branding { font-size: 10px; color: #777; margin-bottom: 20px; letter-spacing: 1px; }
-        .footer { position: fixed; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 10px; color: #444; }
-
-        /* BUTTONS */
-        .btn { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); }
-        .btn-orange { background: linear-gradient(135deg, #ff6f00, #ff8f00); box-shadow: 0 0 15px rgba(255, 111, 0, 0.4); }
-        .btn-grey { background: #333; border: 1px solid #555; }
-        .btn-red { background: linear-gradient(135deg, #d32f2f, #f44336); height: 70px; font-size: 20px; animation: pulse 2s infinite; margin-top: 15px; }
-        .btn-green { background: linear-gradient(135deg, #2e7d32, #43a047); }
-        .btn-blue { background: linear-gradient(135deg, #1565c0, #1976d2); }
-        .btn-black { background: #000; border: 1px solid #333; }
-        .btn-secret { background: transparent; border: 1px dashed #555; color: #777; margin-top: 30px; font-size: 12px; }
-
-        /* FAKE SHUTDOWN UI */
-        #fakeShutdownOverlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; z-index: 99999; align-items: center; justify-content: center; flex-direction: column;
-        }
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #fff;
-            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* PREDATOR HUD */
-        #hackerHUD {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1500; pointer-events: none; background: rgba(0, 0, 0, 0.8);
-            font-family: 'Courier New', monospace;
-        }
-        .hud-text { position: absolute; color: #0f0; font-weight: bold; text-shadow: 0 0 5px #0f0; font-size: 14px;}
-        .center-box {
-            top: 50%; left: 50%; transform: translate(-50%, -50%); position: absolute;
-            width: 250px; height: 250px; border: 2px dashed #0f0; border-radius: 10px;
-            animation: pulse-green 1s infinite;
-        }
-        .bottom-alert {
-            bottom: 50px; width: 100%; text-align: center; position: absolute;
-            color: red; font-size: 20px; font-weight: bold; background: black; padding: 10px;
-            animation: blink 0.5s infinite;
-        }
-
-        /* STEALTH OVERLAY (BLACK SCREEN) */
-        #pocketOverlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: black; z-index: 2000; color: #111; align-items: center; justify-content: center; 
-        }
-
-        /* SECRET MODAL */
-        #secretModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; color:black; z-index: 20000; overflow-y: scroll; }
-
-        /* HIDDEN VIDEO */
-        #hiddenVideo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0; transition: opacity 0.5s; }
+        #secretModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 20000; overflow-y: scroll; }
+        #pocketOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 99999; color: #333; display: flex; align-items: center; justify-content: center; flex-direction: column; }
         
-        @keyframes pulse { 0% { box-shadow: 0 0 10px red; } 50% { box-shadow: 0 0 25px red; } 100% { box-shadow: 0 0 10px red; } }
-        @keyframes pulse-green { 0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+        #status { font-weight: bold; margin-top: 10px; color: #555; font-size: 14px; }
+        #locCounter { font-size: 12px; color: #d32f2f; margin-top: 5px; display:none; }
+        
+        /* KEY TESTER DISPLAY */
+        #keyDisplay {
+            background: #000; color: #0f0; font-family: monospace; 
+            padding: 10px; margin-top: 5px; border-radius: 5px; 
+            font-size: 14px; min-height: 25px; border: 1px solid #333;
+        }
+
+        #widgetButton { position: fixed; bottom: 20px; right: 20px; width: 65px; height: 65px; background: linear-gradient(135deg, #1a237e, #3949ab); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 10002; border: 2px solid white; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
     </style>
 </head>
 
 <body>
 
-    <h2>🛡️ RAKSHA ELITE</h2>
-    <div class="branding">DEVELOPED BY ARYAN</div>
+    <h2>🛡️ Raksha Remote</h2>
 
-    <button id="guardBtn" class="btn btn-orange" onclick="toggleGuard()">
-        🔊 ACTIVATE TRAP MODE
-        <br><span style="font-size:10px;">(Full Screen Protection)</span>
+    <button id="guardBtn" class="btn btn-orange" onclick="toggleShakeGuard()">
+        🔊 ACTIVATE GUARD + REMOTE
+        <br><span style="font-size:12px; font-weight:normal;">(Tap to Connect Remote)</span>
     </button>
 
-    <button class="btn btn-grey" onclick="triggerFakeShutdown()">
-        🔋 FAKE SHUTDOWN
-    </button>
+    <div id="keyDisplay">Last Key: None</div>
 
-    <button id="sirenBtn" class="btn btn-black" onclick="manualSiren()">🚓 Manual Siren</button>
     <button class="btn btn-green" onclick="manualLocation()">📍 Share Location</button>
     <a href="tel:+918409681110" style="text-decoration:none;"><button class="btn btn-blue">📞 Call Papa</button></a>
+    <hr style="opacity:0.3; margin: 15px 0;">
+    <button class="btn btn-red" onclick="startEmergency()">🆘 SOS VIDEO (BACK CAM)</button>
 
-    <div style="margin: 20px 0; border-top: 1px solid #444;"></div>
+    <p id="status">System Ready</p>
+    <p id="locCounter">Updates Sent: 0</p>
 
-    <button class="btn btn-red" onclick="startEmergency()">
-        🆘 PANIC BUTTON
-    </button>
-
-    <p id="status" style="color:#777; font-size:12px;">System Ready | v5.0 (Smart Remote)</p>
-    
     <button class="btn btn-secret" onclick="openSecretMode()">📚 Class 12 Biology Notes</button>
+    <div id="widgetButton" onclick="openAIWindow()">🤖</div>
 
-    <div class="footer">© 2026 Aryan Security Systems</div>
-
-    <div id="fakeShutdownOverlay" onclick="exitFakeShutdown()">
-        <div class="spinner"></div>
-        <p style="font-family: sans-serif; font-size: 14px;">Shutting down...</p>
+    <div id="pocketOverlay" style="display:none;" onclick="exitPocketMode()">
+        <p style="color:#222; font-size:12px;">Monitoring Remote & Motion...</p>
+        <p style="color:#222; font-size:10px;">Double Tap Screen to Wake</p>
     </div>
 
-    <div id="pocketOverlay" onclick="exitPocketMode()">
-        <p style="font-size:10px;">Armed. Double Tap to Disarm.</p>
-    </div>
+    <input type="text" id="remoteTrap" style="opacity:0; position:absolute; top:-1000px; height:1px; width:1px;">
 
-    <div id="hackerHUD">
-        <div class="hud-text" style="top:20px; left:20px;" id="hudLeft">SCANNING...</div>
-        <div class="hud-text" style="top:20px; right:20px;">BATTERY: 100%<br>REC: ●</div>
-        <div class="center-box"></div>
-        <div class="hud-text bottom-alert">⚠️ UPLOADING EVIDENCE TO POLICE...</div>
-    </div>
+    <div id="stealthOverlay" onclick="stopEmergency()"></div>
+    <video id="hiddenVideo" autoplay playsinline muted style="display:none;"></video>
 
     <div id="secretModal">
         <div style="padding:20px; text-align:left;">
@@ -124,220 +75,200 @@
                 <h2 style="color:#333; text-align:center;">🔒 Restricted Access</h2>
                 <input type="password" id="secretPass" placeholder="Enter PIN" style="width:100%; padding:15px; font-size:18px; margin-bottom:10px; border:1px solid #ccc; border-radius:10px; box-sizing: border-box;">
                 <button class="btn btn-blue" onclick="checkSecretPass()">Unlock Notes</button>
-                <button class="btn btn-grey" onclick="closeSecretMode()">Close</button>
+                <button class="btn" onclick="closeSecretMode()" style="background:#ccc; color:#000;">Close</button>
             </div>
             <div id="realHelp" style="display:none;">
                 <h1 style="color:#d32f2f; text-align: center;">🤫 Silent Help Zone</h1>
-                <p style="text-align:center;">Project by Aryan</p>
                 <button class="btn btn-green" onclick="window.open('https://stopncii.org/')">🛑 Block Images</button>
-                <button class="btn btn-grey" onclick="closeSecretMode()">❌ Close</button>
+                <button class="btn" onclick="closeSecretMode()" style="background:#333;">❌ Close</button>
             </div>
         </div>
     </div>
-
-    <video id="hiddenVideo" autoplay playsinline muted></video>
 
     <script>
         const BOT_TOKEN = "8378037937:AAGjuFdZWLnf0kFfTG_QIFCslgvrDMb-sC4";
         const CHAT_ID = "8508792403"; 
 
-        let isGuardActive = false; let emergencyActive = false;
-        let wakeLock = null; let videoTrack = null; let flashInterval = null;
-        let sirenOscillator = null; let sirenInterval = null; let sirenContext = null;
-        let mediaRecorder; let recordedChunks = [];
-        let lastX=0, lastY=0, lastZ=0; const shakeThreshold = 25;
-        let shutdownMode = false;
+        let mediaRecorder; let recordedChunks = []; let tapCount = 0; let emergencyActive = false;
+        let audioContext, analyser, microphone, javascriptNode, isGuardActive = false;
+        let locInterval; let locCount = 0; let wakeLock = null;
 
+        // SHAKE VARIABLES
+        let accelerationX = 0, accelerationY = 0, accelerationZ = 0;
+        let lastX = 0, lastY = 0, lastZ = 0;
+        const shakeThreshold = 25; 
+
+        function openAIWindow() { window.open("https://ultimate-rakshak.vercel.app/", 'RakshaAI', "width=350,height=550"); }
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
+        async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
 
-        function wakeUpVoiceEngine() {
-            if ('speechSynthesis' in window) {
-                const dummy = new SpeechSynthesisUtterance(".");
-                dummy.volume = 0; window.speechSynthesis.speak(dummy);
-            }
+        // --- 🔵 THE REMOTE FIX (FOCUS TRAP) ---
+        // This keeps the hidden input focused so the browser listens to keys
+        function focusTrap() {
+            const trap = document.getElementById("remoteTrap");
+            trap.focus();
+            // Prevent losing focus
+            trap.onblur = function() {
+                setTimeout(() => { if(isGuardActive) trap.focus(); }, 10);
+            };
         }
 
-        // --- 1. ACTIVATE GUARD ---
-        async function toggleGuard() {
-            if (isGuardActive) { location.reload(); } else {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: true, 
-                        video: { facingMode: "environment", width: { ideal: 240 }, frameRate: { ideal: 15 }, advanced: [{ torch: false }] } 
-                    });
-                    document.getElementById("hiddenVideo").srcObject = stream;
-                    videoTrack = stream.getVideoTracks()[0];
-
-                    if (window.DeviceMotionEvent) window.addEventListener('devicemotion', handleMotion, true);
-                    window.addEventListener('keydown', handleRemoteKey);
-
-                    wakeUpVoiceEngine();
-                    isGuardActive = true;
-                    requestWakeLock();
-
-                    // Enter Black Screen
-                    document.getElementById("pocketOverlay").style.display = "flex";
-                    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e=>{});
-
-                    document.getElementById("guardBtn").innerText = "🛡️ ARMED";
-                } catch (err) { alert("Camera Permission Needed!"); }
-            }
-        }
-
-        // --- 2. TRIGGERS (REMOTE IS KEY HERE) ---
-        function handleMotion(event) {
-            if (!isGuardActive || emergencyActive) return;
-            let acc = event.accelerationIncludingGravity; if(!acc) return;
-            let delta = Math.abs(lastX-acc.x) + Math.abs(lastY-acc.y) + Math.abs(lastZ-acc.z);
-            if (delta > shakeThreshold) startEmergency();
-            lastX=acc.x; lastY=acc.y; lastZ=acc.z;
-        }
+        // Detect Keys on the TRAP input specifically
+        document.getElementById("remoteTrap").addEventListener('keydown', handleRemoteKey);
+        // Also listen globally just in case
+        window.addEventListener('keydown', handleRemoteKey);
 
         function handleRemoteKey(event) {
-            if (['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) return;
+            // Show what key was pressed on screen
+            document.getElementById("keyDisplay").innerText = "Key Detected: " + event.key;
             
-            // --- LOGIC: DOUBLE TAP FEATURE ---
-            // 1. If Normal Guard Mode -> Start Panic
-            // 2. If Already Panic Mode -> Trigger Fake Shutdown (Silent Record)
-            
-            if (emergencyActive) {
-                console.log("Remote: Switching to Fake Shutdown");
-                triggerFakeShutdown(); // This is the feature you wanted
-                return;
-            }
-
-            if (isGuardActive) {
-                event.preventDefault();
-                startEmergency();
+            // Allow almost ANY key to trigger SOS (Enter, Volume, Space, a, b, etc.)
+            // Because remotes send weird keys sometimes.
+            // But ignore standard modification keys like Shift/Control
+            if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
+                if (isGuardActive && !emergencyActive) {
+                    console.log("Remote Triggered SOS");
+                    startEmergency();
+                }
             }
         }
 
-        // --- 3. FAKE SHUTDOWN ---
-        function triggerFakeShutdown() {
-            // Stop Siren/Light but keep recording
-            if(sirenOscillator) { sirenOscillator.stop(); clearInterval(sirenInterval); }
-            clearInterval(flashInterval);
-            if(window.speechSynthesis) window.speechSynthesis.cancel();
+        // --- 👋 SHAKE DETECTION ---
+        function handleMotion(event) {
+            if (!isGuardActive || emergencyActive) return;
+            let acc = event.accelerationIncludingGravity;
+            if(!acc) return;
+            let deltaX = Math.abs(lastX - acc.x);
+            let deltaY = Math.abs(lastY - acc.y);
+            let deltaZ = Math.abs(lastZ - acc.z);
+            if ((deltaX + deltaY + deltaZ) > shakeThreshold) {
+                console.log("SHAKE DETECTED!");
+                startEmergency();
+            }
+            lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+        }
 
-            // Show Fake Shutdown UI
-            document.getElementById("hackerHUD").style.display = "none";
-            document.getElementById("fakeShutdownOverlay").style.display = "flex";
+        // --- 1. GUARD TOGGLE ---
+        async function toggleShakeGuard() {
+            if (isGuardActive) {
+                if (audioContext) audioContext.close();
+                window.removeEventListener('devicemotion', handleMotion);
+                isGuardActive = false;
+                releaseWakeLock();
+                document.getElementById("pocketOverlay").style.display = "none";
+                document.getElementById("guardBtn").className = "btn btn-orange";
+                document.getElementById("guardBtn").innerHTML = "🔊 ACTIVATE GUARD + REMOTE";
+                document.getElementById("status").innerText = "Guard Mode OFF";
+            } else {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    microphone = audioContext.createMediaStreamSource(stream);
+                    javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+                    analyser.smoothingTimeConstant = 0.8; analyser.fftSize = 1024;
+                    microphone.connect(analyser); analyser.connect(javascriptNode);
+                    javascriptNode.connect(audioContext.destination);
+                    javascriptNode.onaudioprocess = function() {
+                        var array = new Uint8Array(analyser.frequencyBinCount);
+                        analyser.getByteFrequencyData(array);
+                        var values = 0; var length = array.length;
+                        for (var i = 0; i < length; i++) { values += array[i]; }
+                        var average = values / length;
+                        if (average > 110 && !emergencyActive) { startEmergency(); }
+                    }
+
+                    if (window.DeviceMotionEvent) window.addEventListener('devicemotion', handleMotion, true);
+
+                    isGuardActive = true;
+                    requestWakeLock();
+                    
+                    // ACTIVATE FOCUS TRAP FOR REMOTE
+                    focusTrap();
+
+                    document.getElementById("pocketOverlay").style.display = "flex";
+                    document.getElementById("guardBtn").className = "btn btn-orange guard-active";
+                    document.getElementById("guardBtn").innerHTML = "🛡️ REMOTE & MIC ACTIVE";
+                    document.getElementById("status").innerText = "Ready for Remote Click...";
+                    
+                } catch (err) { alert("Permissions Needed!"); }
+            }
+        }
+        
+        let lastTap = 0;
+        function exitPocketMode() {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastTap < 500) document.getElementById("pocketOverlay").style.display = "none";
+            lastTap = currentTime;
+        }
+
+        // --- 2. EMERGENCY TRIGGER ---
+        async function startEmergency() {
+            if (emergencyActive) return;
+            emergencyActive = true;
+            if (isGuardActive && audioContext) { audioContext.close(); isGuardActive = false; }
+            requestWakeLock();
+            window.removeEventListener('devicemotion', handleMotion);
             
-            // Full Black after 3s
+            document.getElementById("pocketOverlay").style.display = "none";
+            document.getElementById("status").innerText = "⚠️ SOS ACTIVATED!";
+            document.getElementById("status").style.color = "red";
+            document.getElementById("locCounter").style.display = "block";
+
+            forceSendLocation(); 
+            locInterval = setInterval(forceSendLocation, 10000); 
+            startVideoRecording();
+            setTimeout(() => { window.location.href = "tel:112"; }, 1500);
             setTimeout(() => {
-                document.getElementById("fakeShutdownOverlay").innerHTML = ""; 
+                document.getElementById("pocketOverlay").style.display = "flex"; 
+                document.getElementById("pocketOverlay").style.background = "black"; 
+                document.getElementById("pocketOverlay").innerHTML = ""; 
+                if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e=>{});
             }, 3000);
         }
 
-        function exitFakeShutdown() {
-            // Double click to exit fake shutdown
-            if(confirm("Exit App?")) location.reload();
-        }
-
-        // --- 4. EMERGENCY SEQUENCE ---
-        function startEmergency() {
-            if (emergencyActive) return;
-            emergencyActive = true;
-
-            document.getElementById("pocketOverlay").style.display = "none";
-            document.getElementById("hackerHUD").style.display = "block";
-            document.getElementById("hiddenVideo").style.opacity = "0.4"; 
-            
-            let step = 0;
-            const scans = ["ANALYZING FACE...", "MATCHING CRIMINAL DB...", "SENDING GPS...", "POLICE ALERT SENT"];
-            setInterval(() => {
-                document.getElementById("hudLeft").innerHTML = `SCAN: ${scans[step % scans.length]}<br>ACCURACY: 99%`;
-                step++;
-            }, 800);
-
-            playVoiceWarning();
-            sendSOS();
-        }
-
-        // --- VOICE & SIREN ---
-        function playVoiceWarning() {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const msg = new SpeechSynthesisUtterance("Warning! Face Detected. Location sent to Police Control Room.");
-                msg.lang = 'en-US'; msg.volume = 1; msg.rate = 1.1; msg.pitch = 1.0; 
-                msg.onend = function() { startSiren(); startStrobe(); };
-                setTimeout(() => { if(!sirenOscillator) startSiren(); }, 4000);
-                window.speechSynthesis.speak(msg);
-            } else {
-                startSiren(); startStrobe();
-            }
-        }
-
-        function startSiren() {
+        // --- 3. VIDEO RECORDER ---
+        async function startVideoRecording() {
             try {
-                if (sirenOscillator) return;
-                sirenContext = new (window.AudioContext || window.webkitAudioContext)();
-                sirenOscillator = sirenContext.createOscillator();
-                const gainNode = sirenContext.createGain();
-                sirenOscillator.type = 'sawtooth'; sirenOscillator.frequency.value = 700;
-                sirenOscillator.connect(gainNode); gainNode.connect(sirenContext.destination);
-                sirenOscillator.start();
-                let isHigh = false;
-                sirenInterval = setInterval(() => {
-                    isHigh = !isHigh;
-                    sirenOscillator.frequency.setValueAtTime(isHigh ? 1200 : 700, sirenContext.currentTime);
-                }, 500);
-            } catch(e) {}
-            setTimeout(() => { window.location.href = "tel:112"; }, 3000);
-        }
-
-        function manualSiren() {
-            if(sirenOscillator) {
-                sirenOscillator.stop(); sirenOscillator = null; clearInterval(sirenInterval);
-                document.getElementById("sirenBtn").innerText = "🚓 MANUAL POLICE SIREN";
-            } else {
-                startSiren();
-                document.getElementById("sirenBtn").innerText = "🔕 STOP SIREN";
-            }
-        }
-
-        function startStrobe() {
-            if (!videoTrack) return;
-            let flashState = false;
-            flashInterval = setInterval(() => {
-                flashState = !flashState;
-                try { videoTrack.applyConstraints({ advanced: [{ torch: flashState }] }).catch(e=>{}); } catch(e){}
-            }, 150);
-        }
-
-        function sendSOS() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent("🚨 RAKSHA ALERT (Aryan OS)!\n📍 " + link)}`);
-                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation?chat_id=${CHAT_ID}&latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}`);
-                }, null, { enableHighAccuracy: true });
-            }
-            startVideoRecording();
-        }
-        
-        function startVideoRecording() {
-            let options = { mimeType: 'video/webm' };
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
-            try {
-                mediaRecorder = new MediaRecorder(document.getElementById("hiddenVideo").srcObject, options);
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "environment" } }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: true }));
+                document.getElementById("hiddenVideo").srcObject = stream;
+                let options = { mimeType: 'video/webm;codecs=vp8,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/mp4' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) options = {};
+                mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = uploadVideo;
                 mediaRecorder.start();
-                setInterval(() => { if (mediaRecorder.state === "recording") { mediaRecorder.stop(); setTimeout(() => mediaRecorder.start(), 100); } }, 4000);
-            } catch(e) {}
+                setInterval(() => {
+                    if (mediaRecorder.state === "recording") { mediaRecorder.stop(); setTimeout(() => { if(emergencyActive) mediaRecorder.start(); }, 100); }
+                }, 5000); 
+            } catch (err) { alert("Camera Error: " + err.message); }
         }
 
         function uploadVideo() {
             if (!recordedChunks.length) return;
-            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "video/webm" });
             recordedChunks = [];
             const formData = new FormData();
             formData.append("chat_id", CHAT_ID);
-            formData.append("video", blob, `evidence_${Date.now()}.mp4`);
+            let ext = blob.type.includes("mp4") ? "mp4" : "webm";
+            formData.append("video", blob, `evidence_${Date.now()}.${ext}`);
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, { method: "POST", body: formData }).catch(e=>{});
         }
-        
+
+        function forceSendLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+                    locCount++;
+                    document.getElementById("locCounter").innerText = "Updates Sent: " + locCount;
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation?chat_id=${CHAT_ID}&latitude=${lat}&longitude=${lon}`).catch(e=>{});
+                    const msg = `🚨 LOC UPDATE #${locCount}\n📍 https://www.google.com/maps?q=${lat},${lon}`;
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`).catch(e=>{});
+                }, error => { console.log("GPS Fail"); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+            }
+        }
+
         function manualLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -347,16 +278,10 @@
             }
         }
 
+        function stopEmergency() { tapCount++; if (tapCount >= 4) { location.reload(); } }
         function openSecretMode() { document.getElementById("secretModal").style.display = "block"; }
         function closeSecretMode() { document.getElementById("secretModal").style.display = "none"; document.getElementById("fakeLogin").style.display = "block"; document.getElementById("realHelp").style.display = "none"; document.getElementById("secretPass").value = ""; }
         function checkSecretPass() { if(document.getElementById("secretPass").value === "1234") { document.getElementById("fakeLogin").style.display = "none"; document.getElementById("realHelp").style.display = "block"; } else { alert("Incorrect Password!"); } }
-
-        let lastTap = 0;
-        function exitPocketMode() {
-            const currentTime = new Date().getTime();
-            if (currentTime - lastTap < 500 && !emergencyActive) { location.reload(); }
-            lastTap = currentTime;
-        }
     </script>
 </body>
 </html>
