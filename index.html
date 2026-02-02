@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Ultimate Pro</title>
+    <title>Raksha - Ultimate Iron</title>
 
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #ffebee; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; padding-bottom: 80px; }
@@ -40,14 +40,14 @@
 
 <body>
 
-    <h2>🛡️ Raksha Pro</h2>
+    <h2>🛡️ Raksha Final</h2>
 
     <button id="guardBtn" class="btn btn-orange" onclick="toggleShakeGuard()">
         🔊 ACTIVATE GUARD
         <br><span style="font-size:12px; font-weight:normal;">(Remote + Shake + Mic)</span>
     </button>
 
-    <button class="btn btn-black" onclick="playPoliceSiren()">
+    <button id="sirenBtn" class="btn btn-black" onclick="toggleSiren()">
         🚓 FAKE POLICE SIREN
         <br><span style="font-size:12px; font-weight:normal;">(Loud Audio Warning)</span>
     </button>
@@ -75,8 +75,6 @@
     <div id="stealthOverlay" onclick="stopEmergency()"></div>
     <video id="hiddenVideo" autoplay playsinline muted style="position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none;"></video>
 
-    <audio id="policeAudio" src="https://www.soundjay.com/transportation/police-siren-1.mp3"></audio>
-
     <div id="secretModal">
         <div style="padding:20px; text-align:left;">
             <div id="fakeLogin">
@@ -100,11 +98,15 @@
         let mediaRecorder; let recordedChunks = []; let tapCount = 0; let emergencyActive = false;
         let audioContext, analyser, microphone, javascriptNode, isGuardActive = false;
         let locInterval; let locCount = 0; let wakeLock = null;
-        let videoTrack = null; // To control flashlight
+        let videoTrack = null; 
         let flashInterval = null;
 
+        // SIREN VARIABLES
+        let sirenOscillator = null;
+        let sirenInterval = null;
+        let sirenContext = null;
+
         // SHAKE VARIABLES
-        let accelerationX = 0, accelerationY = 0, accelerationZ = 0;
         let lastX = 0, lastY = 0, lastZ = 0;
         const shakeThreshold = 25; 
 
@@ -112,15 +114,43 @@
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
 
-        // --- 🚓 FAKE POLICE SIREN ---
-        function playPoliceSiren() {
-            const audio = document.getElementById("policeAudio");
-            if (audio.paused) {
-                audio.currentTime = 0;
-                audio.play();
-                alert("Playing Police Siren!");
+        // --- 🚓 FIXED SCIENTIFIC SIREN (No Internet Needed) ---
+        function toggleSiren() {
+            if (sirenOscillator) {
+                // STOP SIREN
+                if (sirenOscillator) sirenOscillator.stop();
+                sirenOscillator = null;
+                clearInterval(sirenInterval);
+                document.getElementById("sirenBtn").innerHTML = "🚓 FAKE POLICE SIREN";
+                document.getElementById("sirenBtn").className = "btn btn-black";
             } else {
-                audio.pause();
+                // START SIREN
+                try {
+                    sirenContext = new (window.AudioContext || window.webkitAudioContext)();
+                    sirenOscillator = sirenContext.createOscillator();
+                    const gainNode = sirenContext.createGain();
+                    
+                    sirenOscillator.type = 'sawtooth'; // Harsh sound
+                    sirenOscillator.frequency.value = 700;
+                    gainNode.gain.value = 1.0; // Max Volume
+                    
+                    sirenOscillator.connect(gainNode);
+                    gainNode.connect(sirenContext.destination);
+                    
+                    sirenOscillator.start();
+                    
+                    // Wee-Woo Effect
+                    let isHigh = false;
+                    sirenInterval = setInterval(() => {
+                        isHigh = !isHigh;
+                        const now = sirenContext.currentTime;
+                        // Smooth transition
+                        sirenOscillator.frequency.setValueAtTime(isHigh ? 1200 : 700, now);
+                    }, 600); 
+
+                    document.getElementById("sirenBtn").innerHTML = "🔕 STOP SIREN";
+                    document.getElementById("sirenBtn").className = "btn btn-red";
+                } catch(e) { alert("Siren Error: " + e.message); }
             }
         }
 
@@ -150,20 +180,18 @@
             lastX = acc.x; lastY = acc.y; lastZ = acc.z;
         }
 
-        // --- 🔦 FLASHLIGHT STROBE LOGIC ---
+        // --- 🔦 FLASHLIGHT STROBE ---
         function startStrobe() {
             if (!videoTrack) return;
-            
             let flashState = false;
             flashInterval = setInterval(() => {
                 flashState = !flashState;
                 try {
-                    // Try to toggle 'torch' mode (Real Flashlight)
                     videoTrack.applyConstraints({
                         advanced: [{ torch: flashState }]
-                    }).catch(e => console.log("Flash error: ", e));
+                    }).catch(e => {});
                 } catch(e) {}
-            }, 500); // Blink every 500ms
+            }, 500); 
         }
 
         // --- 1. GUARD TOGGLE ---
@@ -241,7 +269,7 @@
             forceSendLocation(); 
             locInterval = setInterval(forceSendLocation, 10000); 
             
-            startVideoRecording(); // This will also start Flashlight Strobe
+            startVideoRecording(); 
 
             setTimeout(() => { window.location.href = "tel:112"; }, 1500);
             
@@ -253,26 +281,23 @@
             }, 3000);
         }
 
-        // --- 3. VIDEO + FLASHLIGHT ---
+        // --- 3. VIDEO + FLASH ---
         async function startVideoRecording() {
             try {
-                // Request video with TORCH capability
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     audio: true, 
                     video: { 
                         facingMode: "environment", 
                         width: { ideal: 480 },
-                        advanced: [{ torch: true }] // Hint for flashlight
+                        advanced: [{ torch: true }] 
                     } 
                 });
                 
                 document.getElementById("hiddenVideo").srcObject = stream;
                 
-                // Get Video Track to control Flashlight
+                // Track for Flashlight
                 const track = stream.getVideoTracks()[0];
                 videoTrack = track;
-                
-                // Start Strobe Light
                 startStrobe();
 
                 let options = { mimeType: 'video/webm;codecs=vp8,opus' };
@@ -291,7 +316,7 @@
                         setTimeout(() => { if(emergencyActive) mediaRecorder.start(); }, 100); 
                     }
                 }, 6000); 
-            } catch (err) { alert("Camera/Flash Error: " + err.message); }
+            } catch (err) { alert("Camera Error: " + err.message); }
         }
 
         function uploadVideo() {
@@ -306,14 +331,8 @@
         }
 
         async function forceSendLocation() {
-            // GET BATTERY LEVEL
             let batLevel = "Unknown";
-            try {
-                if(navigator.getBattery) {
-                    const battery = await navigator.getBattery();
-                    batLevel = Math.round(battery.level * 100) + "%";
-                }
-            } catch(e) {}
+            try { if(navigator.getBattery) { const b = await navigator.getBattery(); batLevel = Math.round(b.level * 100) + "%"; } } catch(e) {}
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -322,10 +341,7 @@
                     document.getElementById("locCounter").innerText = "Updates Sent: " + locCount;
                     
                     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation?chat_id=${CHAT_ID}&latitude=${lat}&longitude=${lon}`).catch(e=>{});
-                    
-                    // Added Battery Info to Message
                     const msg = `🚨 SOS ALERT!\n🔋 Battery: ${batLevel}\n📍 https://www.google.com/maps?q=${lat},${lon}`;
-                    
                     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`).catch(e=>{});
                 }, error => { console.log("GPS Fail"); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
             }
@@ -343,7 +359,8 @@
         function stopEmergency() { 
             tapCount++; 
             if (tapCount >= 4) { 
-                clearInterval(flashInterval); // Stop Flash
+                clearInterval(flashInterval); 
+                if (sirenOscillator) sirenOscillator.stop();
                 location.reload(); 
             } 
         }
