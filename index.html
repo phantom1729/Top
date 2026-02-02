@@ -26,6 +26,20 @@
         .btn-red { background: linear-gradient(135deg, #d32f2f, #f44336); height: 70px; font-size: 20px; animation: pulse 2s infinite; margin-top: 15px; }
         .btn-secret { background: transparent; border: 1px dashed #555; color: #777; margin-top: 30px; font-size: 12px; }
 
+        /* AI WIDGET BUTTON (Added Back) */
+        #widgetButton { 
+            position: fixed; bottom: 30px; right: 20px; 
+            width: 60px; height: 60px; 
+            background: linear-gradient(135deg, #6200ea, #651fff); 
+            color: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 30px; cursor: pointer; 
+            box-shadow: 0 5px 15px rgba(98, 0, 234, 0.4); 
+            z-index: 100; border: 2px solid white;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+
         /* FAKE SHUTDOWN UI */
         #fakeShutdownOverlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -76,7 +90,7 @@
 <body>
 
     <h2>🛡️ RAKSHA ELITE</h2>
-    <div class="branding">CREATED BY ARYAN❤️</div>
+    <div class="branding">DEVELOPED BY ARYAN</div>
 
     <button id="guardBtn" class="btn btn-orange" onclick="toggleGuard()">
         🔊 ACTIVATE TRAP MODE
@@ -99,6 +113,9 @@
     </button>
 
     <p id="status" style="color:#777; font-size:12px;">System Ready | v2.0</p>
+    
+    <div id="widgetButton" onclick="openAIWindow()">🤖</div>
+
     <button class="btn btn-secret" onclick="openSecretMode()">📚 Class 12 Biology Notes</button>
 
     <div class="footer">© 2026 Aryan Security Systems</div>
@@ -149,6 +166,7 @@
         let lastX=0, lastY=0, lastZ=0; const shakeThreshold = 25;
         let shutdownMode = false;
 
+        function openAIWindow() { window.open("https://ultimate-rakshak.vercel.app/", 'RakshaAI', "width=350,height=550"); }
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
 
         // --- 🗣️ VOICE WARM-UP ---
@@ -179,8 +197,10 @@
                     isGuardActive = true;
                     requestWakeLock();
 
-                    // Enter Black Screen
+                    // Enter Black Screen & HIDE WIDGET
                     document.getElementById("pocketOverlay").style.display = "flex";
+                    document.getElementById("widgetButton").style.display = "none"; // Hide widget in Stealth
+
                     if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e=>{});
 
                     document.getElementById("guardBtn").innerText = "🛡️ ARMED (Aryan OS)";
@@ -228,6 +248,7 @@
             document.getElementById("pocketOverlay").style.display = "none";
             document.getElementById("hackerHUD").style.display = "block";
             document.getElementById("hiddenVideo").style.opacity = "0.4"; 
+            document.getElementById("widgetButton").style.display = "none"; // Ensure widget is hidden
             
             // HUD Animation
             let step = 0;
