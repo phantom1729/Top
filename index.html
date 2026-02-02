@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raksha - Master App</title>
+    <title>Raksha - JARVIS Mode</title>
 
     <style>
         /* --- NORMAL THEME --- */
@@ -11,19 +11,24 @@
         h2 { color: #b71c1c; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
         
         /* BUTTON STYLES */
-        .btn { width: 100%; padding: 18px; margin: 10px 0; font-size: 18px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.1s; }
+        .btn { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border: none; border-radius: 12px; color: white; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .btn:active { transform: scale(0.96); }
         .btn-green { background: linear-gradient(135deg, #2e7d32, #66bb6a); }
         .btn-blue { background: linear-gradient(135deg, #1565c0, #42a5f5); }
         .btn-orange { background: linear-gradient(135deg, #ef6c00, #ff9800); border: 2px solid #ffcc80; }
         .btn-black { background: linear-gradient(135deg, #212121, #424242); border: 2px solid #616161; }
-        .btn-red { background: linear-gradient(135deg, #c62828, #ff5252); height: 100px; font-size: 24px; border: 4px solid #ffcdd2; animation: pulse 1.5s infinite; margin-top: 15px; }
-        .btn-secret { background: #546e7a; margin-top: 40px; font-size: 16px; }
+        .btn-purple { background: linear-gradient(135deg, #7b1fa2, #ab47bc); }
+        .btn-red { background: linear-gradient(135deg, #c62828, #ff5252); height: 80px; font-size: 20px; border: 4px solid #ffcdd2; animation: pulse 1.5s infinite; margin-top: 15px; }
+        .btn-secret { background: #546e7a; margin-top: 20px; font-size: 14px; }
         
         .guard-active { background: #333; color: #ff9800; animation: breathe 2s infinite; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 10px #c62828; } 50% { box-shadow: 0 0 25px #c62828; } 100% { box-shadow: 0 0 10px #c62828; } }
         @keyframes breathe { 0% { border-color: #ff9800; } 50% { border-color: white; } 100% { border-color: #ff9800; } }
+
+        /* TIMER SECTION */
+        .timer-box { background: #fff; padding: 10px; border-radius: 10px; margin: 10px 0; border: 1px solid #ccc; }
+        .timer-row { display: flex; gap: 10px; justify-content: center; }
 
         /* --- BLACK SCREEN (STEALTH) --- */
         #pocketOverlay { 
@@ -71,16 +76,21 @@
 <body>
 
     <div id="normalUI">
-        <h2 style="color:#b71c1c;">🛡️ Raksha Complete</h2>
+        <h2 style="color:#b71c1c;">🛡️ Raksha Intelligence</h2>
 
         <button id="guardBtn" class="btn btn-orange" onclick="toggleGuard()">
             🔊 ACTIVATE TRAP MODE
             <br><span style="font-size:12px; font-weight:normal;">(Remote + Shake + Predator HUD)</span>
         </button>
 
-        <button id="sirenBtn" class="btn btn-black" onclick="manualSiren()">
-            🚓 MANUAL POLICE SIREN
-        </button>
+        <div class="timer-box">
+            <p style="margin:0 0 5px 0; font-size:14px; color:#333;">⏳ Safety Timer (Auto SOS)</p>
+            <div class="timer-row">
+                <button class="btn btn-purple" style="width:45%; margin:0;" onclick="startTimer(1)">1 Min</button>
+                <button class="btn btn-purple" style="width:45%; margin:0;" onclick="startTimer(15)">15 Mins</button>
+            </div>
+            <button class="btn btn-black" onclick="stopTimer()" style="margin-top:5px; height:40px; font-size:14px;">❌ Stop Timer</button>
+        </div>
 
         <button class="btn btn-green" onclick="manualLocation()">📍 Share Location</button>
         
@@ -139,9 +149,27 @@
         let sirenOscillator = null; let sirenInterval = null; let sirenContext = null;
         let hudInterval = null; let mediaRecorder; let recordedChunks = [];
         let locCount = 0; let lastX=0, lastY=0, lastZ=0; const shakeThreshold = 25;
+        let safetyTimer = null;
 
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
+
+        // --- ⏳ SAFETY TIMER ---
+        function startTimer(minutes) {
+            clearTimeout(safetyTimer);
+            alert(`Timer Set: ${minutes} Minutes.\nIf not stopped, SOS will trigger automatically.`);
+            document.getElementById("status").innerText = `⏳ TIMER: ${minutes} MINS LEFT`;
+            
+            safetyTimer = setTimeout(() => {
+                if(!emergencyActive) startEmergency();
+            }, minutes * 60 * 1000);
+        }
+
+        function stopTimer() {
+            clearTimeout(safetyTimer);
+            alert("Timer Stopped.");
+            document.getElementById("status").innerText = "System Ready";
+        }
 
         // --- 1. ACTIVATE GUARD (GO TO BLACK SCREEN) ---
         async function toggleGuard() {
@@ -149,7 +177,6 @@
                 location.reload(); 
             } else {
                 try {
-                    // Start Mic & Camera immediately (Stealth Mode)
                     const stream = await navigator.mediaDevices.getUserMedia({ 
                         audio: true, 
                         video: { facingMode: "environment", advanced: [{ torch: false }] } 
@@ -159,6 +186,28 @@
 
                     if (window.DeviceMotionEvent) window.addEventListener('devicemotion', handleMotion, true);
                     window.addEventListener('keydown', handleRemoteKey);
+
+                    // MIC SETUP (EASY TEST MODE)
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    microphone = audioContext.createMediaStreamSource(stream);
+                    javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+                    analyser.smoothingTimeConstant = 0.8; analyser.fftSize = 1024;
+                    microphone.connect(analyser); analyser.connect(javascriptNode);
+                    javascriptNode.connect(audioContext.destination);
+                    
+                    javascriptNode.onaudioprocess = function() {
+                        var array = new Uint8Array(analyser.frequencyBinCount);
+                        analyser.getByteFrequencyData(array);
+                        var values = 0; var length = array.length;
+                        for (var i = 0; i < length; i++) { values += array[i]; }
+                        var average = values / length;
+                        
+                        // --- SENSITIVITY SETTING ---
+                        // 50 = Clap / Loud Talking (Easy to Test)
+                        // 110 = Scream (Real Use)
+                        if (average > 50 && !emergencyActive) { startEmergency(); }
+                    }
 
                     isGuardActive = true;
                     requestWakeLock();
@@ -190,21 +239,21 @@
             }
         }
 
-        // --- 3. PREDATOR MODE (ATTACK) ---
+        // --- 3. PREDATOR MODE (VOICE -> SIREN) ---
         function startEmergency() {
             if (emergencyActive) return;
             emergencyActive = true;
+            clearTimeout(safetyTimer); // Stop timer if it triggered
 
-            // Remove Black Screen -> Show Predator HUD
+            // Show HUD
             document.getElementById("pocketOverlay").style.display = "none";
-            document.getElementById("normalUI").style.display = "none"; // Hide buttons
+            document.getElementById("normalUI").style.display = "none"; 
             document.getElementById("hackerHUD").style.display = "block";
             
-            // Make Video Visible & Dim
             document.getElementById("hiddenVideo").style.opacity = "0.6"; 
             document.body.style.backgroundColor = "black";
 
-            // Start HUD Text Animation
+            // HUD Animation
             let step = 0;
             const scans = ["ANALYZING FACE...", "MATCHING CRIMINAL DB...", "EXTRACTING IMEI...", "SENDING GPS...", "POLICE ALERT SENT"];
             hudInterval = setInterval(() => {
@@ -212,12 +261,35 @@
                 step++;
             }, 800);
 
-            // Start Siren & Flash & Record
-            startSiren();
-            startStrobe();
-            sendSOS();
+            // 1. SPEAK WARNING FIRST
+            playVoiceWarning();
 
-            setTimeout(() => { window.location.href = "tel:112"; }, 2500);
+            // 2. SOS Data
+            sendSOS();
+        }
+
+        // --- 🗣️ AI VOICE ---
+        function playVoiceWarning() {
+            // Check if browser supports speech
+            if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance("Warning! Face Detected. Location sent to Police Control Room. Recording uploaded.");
+                msg.lang = 'en-US';
+                msg.volume = 1;
+                msg.rate = 1.1;
+                msg.pitch = 0.8; // Robotic
+
+                // When speech finishes, START SIREN
+                msg.onend = function() {
+                    startSiren();
+                    startStrobe(); // Flashlight also starts with Siren
+                };
+
+                window.speechSynthesis.speak(msg);
+            } else {
+                // If no voice support, start siren immediately
+                startSiren();
+                startStrobe();
+            }
         }
 
         // --- HELPERS ---
@@ -236,16 +308,9 @@
                     sirenOscillator.frequency.setValueAtTime(isHigh ? 1200 : 700, sirenContext.currentTime);
                 }, 500);
             } catch(e) {}
-        }
-
-        function manualSiren() {
-            if(sirenOscillator) {
-                sirenOscillator.stop(); sirenOscillator = null; clearInterval(sirenInterval);
-                document.getElementById("sirenBtn").innerHTML = "🚓 MANUAL POLICE SIREN";
-            } else {
-                startSiren();
-                document.getElementById("sirenBtn").innerHTML = "🔕 STOP SIREN";
-            }
+            
+            // Call 112 after siren starts
+            setTimeout(() => { window.location.href = "tel:112"; }, 2500);
         }
 
         function startStrobe() {
