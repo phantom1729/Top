@@ -394,7 +394,7 @@ setInterval(checkAlert,10000);
             // Continually check if she reached EARLY
             journeyCheckInterval = setInterval(() => {
                 let distToCoaching = getDistance(myLat, myLon, coachingLoc.lat, coachingLoc.lon);
-                if(distToCoaching <= 15) { // 15 Meters Safe Zone
+                if(distToCoaching <= 2) { // 15 Meters Safe Zone
                     clearTimeout(travelTimer);
                     clearInterval(journeyCheckInterval);
                     document.getElementById("stealthOverlay").style.display = "none";
@@ -408,7 +408,7 @@ setInterval(checkAlert,10000);
                 clearInterval(journeyCheckInterval);
                 let distToCoaching = getDistance(myLat, myLon, coachingLoc.lat, coachingLoc.lon);
                 
-                if(distToCoaching > 15) {
+                if(distToCoaching > 2) {
                     // Timeout hit and she is NOT at coaching
                     startEmergency("TIMED SOS: Target Destination Not Reached");
                 } else {
